@@ -1,0 +1,110 @@
+﻿.trb, .trbx {
+    background-color: white;
+    border-color: aqua;
+}
+
+#colorwheel {
+    background-color: white;
+    border: 2px solid black;
+    border-style: solid;
+    padding-top: 10px;
+    font-size: 12px !important;
+    font-family: sans-serif;
+    vertical-align: baseline;
+    position: fixed;
+    z-index: 2147483646;
+    height: 410px;
+    width: 270px;
+}
+
+#chatScreen {
+    background-color: white;
+    font-size: 12px !important;
+    font-family: sans-serif;
+    /*vertical-align: baseline;*/
+    height: 300px;
+    width: 270px;
+    margin:auto;
+}
+
+#postsNames {
+    border: 2px solid black;
+}
+
+#fbColor {
+    cursor: pointer;
+}
+
+#posts, #userTable, #inputArea, #tbColor {
+    border: 2px solid black;
+}
+
+.colorButtons {
+    text-align: center;
+}
+
+#paColor {
+    color: #537c2e;
+}
+
+#hbColor {
+    color: black;
+    background-color: orange;
+}
+
+#oaColor {
+    color: #6e6e6e;
+}
+
+#aaColor {
+    color: #c40707;
+}
+
+#tbColor {
+    background-color: #adc0d6;
+}
+
+#pabColor {
+    background-color: #adc0d6;
+}
+
+#hfColor {
+    color: blue;
+}
+
+#pbColor {
+    background-color: #eaf3fd;
+}
+
+#inputArea {
+    background-color: white;
+}
+.pickColorClass {
+    width: 0px;
+    color: rgb(255, 128, 0);
+    background-color: rgb(255, 128, 0);
+    height: 15px;
+    border-color: black;
+}
+
+.colorLabel {
+    float: left;
+    margin-right: 1em;
+}
+
+input {
+    border-color: black;
+}
+
+.colorButdiv {
+    position:relative;
+    display:inline-block;
+}
+
+.tranparentBut {
+    opacity:0;
+    position:absolute;
+    left:0;
+    top:0;
+    width:100%;
+}

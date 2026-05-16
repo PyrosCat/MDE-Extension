@@ -1,0 +1,65 @@
+/* ── MDE Injected Task & Chat Styles ─────────────────────────────────────── */
+
+/* ── Timer ───────────────────────────────────────────────────────────────── */
+/* Timer output goes to document.title ("RH(MM:SS)") — no injected element.  */
+/* Nothing to style here.                                                     */
+
+/* ── Phrase dropdown (phrases.js) ────────────────────────────────────────── */
+#phrases-menu {
+  position: fixed;
+  z-index: 99999;
+  background: #fff;
+  border: 1px solid #aaa;
+  border-radius: 3px;
+  box-shadow: 2px 2px 6px rgba(0,0,0,.25);
+  padding: 4px;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+#phrasestbl {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#phrasestbl .phtd {
+  padding: 3px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#phrasestbl tr:hover .phtd,
+#phrasestbl tr:focus .phtd {
+  background: #e8f0ff;
+}
+
+#closephrase {
+  display: block;
+  margin-left: auto;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+/* ── RaterHub status (RHstatus JS object — no DOM element) ───────────────── */
+/* Status is a plain JS object passed via messages. Nothing to style.         */
+
+/* ── Chat toast (chrome.notifications API — no DOM element) ─────────────── */
+/* Notifications go through chrome.notifications.create(). Nothing to style. */
+
+/* ── Nickname links (chat.js / chat-colors.js) ───────────────────────────── */
+/* Nicknames are applied via innerHTML replacement, not a data attribute.     */
+/* Style the anchor tags rendered inside chat message containers if needed.   */
+
+/* ── Desktop link (feedback.js) ──────────────────────────────────────────── */
+#message4desktoplink {
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  color: #1565c0;
+  background: #e8f4fd;
+  border: 1px solid #90caf9;
+  border-radius: 3px;
+  padding: 2px 8px;
+  display: inline-block;
+}

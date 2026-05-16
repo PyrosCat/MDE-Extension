@@ -1,0 +1,655 @@
+
+#msgTextpop, #autoCTitle, #autoPTitle {
+    background-color: white;
+    width: 210px;
+    height: 120px;
+    border: 2px solid blue;
+}
+
+#autoCTitle, #autoPTitle {
+    background-color: white;
+    width: 200px;
+    height: 20px;
+    font-weight: bold;
+    border: 2px solid blue;
+}
+
+#NRTLOGMSG {
+    background-color: white;
+    width: 200px;
+    /*height: 400px;*/
+    font-size: 10px;
+    overflow: hidden;
+}
+#invoiceHeaderMsg {
+    font-weight: bold;
+}
+#ClearLog {
+    float: right;
+    background-color: red;
+    color: white;
+}
+
+#ConfTrack {
+    float: right;
+    background-color: red;
+    color: white;
+}
+
+#clearTrack, #rebuildConsolidated, #restoreTrack, #importJustTrack, #importAll {
+    background-color: red;
+    color: white;
+}
+
+#rhasnoozeclear {
+    margin-left: 20px;
+}
+#ClearTrack {
+    float: right;
+}
+
+.headerC {
+    display: block;
+}
+
+#snoozeP {
+    border: 3px solid black;
+    box-sizing: border-box;
+    font-weight: bold;
+    align-content:center;
+}
+.redtitle {
+    color: red;
+    align-content:center;
+    font-weight: bold;
+}
+#rhalertsnoozestart, #rhalertsnoozestop {
+    font-size:small;
+    margin-left:5px;
+}
+
+#ConfLog {
+    float: right;
+    background-color: red;
+    color: white;
+}
+
+/*#filtersxx {
+    font-weight: bold;
+    font-size:18px;
+    color: #009999;
+}*/
+
+.blabel {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+#SubmitReq {
+    color: white;
+    background-color: green;
+}
+
+#resetTime, #refresh {
+    color: white;
+    background-color: green;
+}
+
+.img-bar {
+    border: 0px !important;
+    border-image: !important;
+    font-size: 100%;
+    font-family: sans-serif;
+    vertical-align: baseline;
+    position: fixed;
+    box-sizing: border-box;
+    height: auto;
+    width: auto;
+    display: none;
+    top: 50%;
+    left: 50%;
+}
+
+.smallbut {
+    height: 17px;
+    width: 80px;
+    text-align: center;
+    font-size: 11px;
+    background-color: #FFCCCC;
+}
+
+
+.smallbbut {
+    height: 17px;
+    width: 70px;
+    text-align: center;
+    font-size: 11px;
+    background-color: #91832a;
+    font-weight: bold;
+}
+
+.smallnbut {
+    height: 17px;
+    width: 70px;
+    text-align: center;
+    font-size: 11px;
+    background-color: #98AFC7;
+    font-weight: bold;
+}
+
+.tinybut {
+    height: 20px;
+    width: 30px;
+    text-align: center;
+    font-size: 11px;
+    background-color: #FFCCCC;
+}
+
+.smallbutr {
+    float: right;
+    background-color: red;
+    color: white;
+}
+
+#ANSWERP {
+    display: none;
+}
+
+#timer-bar {
+    top: 5px;
+    right: 25px;
+    margin: 5px !important;
+    padding: 0px !important;
+    border: 0px !important;
+    border-image: !important;
+    font-size: 90%;
+    font-family: sans-serif;
+    vertical-align: baseline;
+    position: fixed;
+    z-index: 2147483647;
+    box-sizing: border-box;
+    height: 200px;
+    width: 250px;
+}
+
+#timerText {
+    height: 20px;
+    width: 35px;
+    background-color: #FFCCCC;
+}
+
+#autoS, #autoSLabel {
+    color: orange;
+    font-weight: bold;
+}
+
+.hoverC:hover {
+    font-weight: bold;
+    color: darkblue !important;
+    cursor: pointer;
+}
+
+#soundsettings {
+    background-color: white;
+    border: 2px solid blue;
+}
+
+/*div#soundsettings span {
+        display: table-cell;
+        text-align: center;
+}*/
+
+#divbox {
+    background-color: white;
+    overflow: scroll;
+    border: 2px solid blue;
+}
+
+#MyHeading {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+#ssbutt {
+    text-align: center;
+    font-size: 11px;
+    background-color: #91832a;
+    font-weight: bold;
+}
+
+#cancelsoundsettings {
+    float: right;
+    font-size: 11px;
+    background-color: #91832a;
+    font-weight: bold;
+}
+
+#savesoundsettings {
+    background-color: green;
+}
+#tasktimersound, #chatalertsound, #nrtstartalertsound, #nrtendalertsound, #taskalertsound {
+    font-size: 11px;
+    background-color: #91832a;
+    font-weight: bold;
+}
+
+#helps, #helpr, #helprh, #helpsp, #spectask, #phaseDisplay, #actable, #rhalertcontrol {
+    background-color: white;
+    border: none;
+    color: blue;
+    padding: 0px 0px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    margin: 0px 0px;
+}
+
+/*#helpr {
+    background-color: #FF851B;
+    border: none;
+    color: blue;
+    padding: 0px 0px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    margin: 0px 0px;
+}*/
+
+
+#helpsx {
+    background-color: white;
+    border: none;
+    color: blue;
+    padding: 0px 0px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 12px;
+    font-weight: bold;
+    margin: 0px 0px;
+}
+
+#invoiceForm {
+    display: none;
+}
+
+.tableClass {
+/*    width: 100%;*/
+    display: block;
+    overflow: auto;
+    white-space: nowrap;
+    min-width: 500px;
+    max-height: 300px;
+    /*border: 1px solid black;*/
+    /*height: 100%;*/
+    /*overflow: auto;*/
+}
+
+.redtdd {
+    color: red;
+    background-color: lightgray;
+    font-weight: bold;
+}
+
+.rednogrey {
+    color: red;
+    font-weight: bold;
+}
+
+.greennogrey {
+    color: green;
+    font-weight: bold;
+}
+.redtdnogrey {
+    color: red;
+    font-weight: bold;
+}
+
+.greentdnogrey {
+    color: green;
+    font-weight: bold;
+}
+.greentitle {
+    color: green;
+    font-weight: bold;
+}
+
+.greentd {
+    color: green;
+    background-color: lightgray;
+    font-weight: bold;
+}
+
+.redText {
+    color:red;
+}
+
+.notimeRow {
+    color: palevioletred;
+}
+/*#tracker {
+    border: 3px solid black;
+    box-sizing: border-box;
+    height:400px;
+}*/
+.bluecalc {
+    color: #80b3ff;
+}
+
+.blueTitle {
+    color: #80b3ff;
+    cursor: pointer;
+}
+
+
+.totalline {
+    color: rebeccapurple;
+    background-color: lightgray;
+    font-weight: bold;
+}
+
+.shadowRow {
+    background-color: lightgray;
+}
+
+/*#status {
+    border: 3px solid black;
+    box-sizing: border-box;
+    font-weight: bold;
+}*/
+
+#headerlinks {
+    display: block;
+}
+
+#boxmsgx {
+    color: red;
+    align-content: center;
+}
+
+#FaceBook {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+#trackerMsg, #trackerHeader {
+    font-weight: bold;
+}
+
+.smallSelect {
+    width: 100px;
+}
+
+.dateWork {
+    color: #bc42f4;
+    font-weight: bold;
+}
+
+#closeTracker {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+
+.releasedC {
+    background-color: #FF851B;
+}
+
+.incompleteC {
+    background-color: #33FFF3;
+}
+
+.inprogressC {
+    background-color: lightpink;
+}
+
+.greenI {
+    color: green;
+}
+
+.blueI {
+    color: blue;
+}
+
+.fr {
+    float: right;
+}
+
+#trackertablediv {
+    margin-top: 20px;
+    border-style: solid;
+   width: 100%;
+}
+
+#closeTotalsBut, #closeInvoice {
+    font-size: 80%;
+    font-weight: bold;
+    /*position: absolute;*/
+    /*top: 0;*/
+    /*right: 0;*/
+    float: right;
+/*    display: block;
+*/    background-color: white;
+}
+
+.totaltd {
+    color: rebeccapurple;
+    background-color: lightgray;
+    font-weight: bold;
+}
+
+#moreT {
+    border-style: none;
+    color: blue;
+    font: bold;
+}
+
+#quickCorrect {
+    background-color: yellow;
+    border-style: solid;
+    /*height: 120px;
+    width: 240px;*/
+    width: -webkit-fit-content;
+    height: -webkit-fit-content;
+    text-align: center;
+}
+
+#convertP {
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    margin-left: 10px;
+    font-size: 75%
+}
+
+#quickName {
+    margin: 5px;
+    width: 20px;
+}
+
+#quickNameNew {
+    margin-right: 5px;
+}
+
+#overall {
+    border-style: solid;
+    background-color: lightgrey;
+}
+
+#message4desktoplink {
+    font-weight: bold;
+    color: red;
+}
+
+.boldtime {
+    font-weight: bold;
+}
+
+#fillinvoice,#fillinvoiceC {
+    background-color: yellow;
+}
+
+#aftertasks {
+    display: block;
+}
+
+#beforeautoD {
+    width: 40px;
+}
+
+#mdefaqwarea {
+    background-color: white;
+    height: 400px;
+    width: 600px;
+    border: 2px solid blue;
+    overflow: scroll;
+}
+
+#saveButt {
+    text-align: center;
+}
+
+#keyboardshortcuts {
+    border: 2px solid blue;
+}
+
+#testMessage {
+    width: 600px;
+}
+
+#savechangediv {
+    border-style: solid;
+}
+
+#testArea {
+    border-style: solid;
+    background-color: lightgrey;
+    width: 300px;
+}
+
+#parmArea {
+    z-index: 99;
+    display: block;
+    border-style: dashed;
+    background-color: lightpink;
+    width: 295px;
+}
+
+#testmsgarea {
+    background-color: white;
+    border: 2px solid blue;
+    font-weight: bold;
+}
+
+.testareaLabel {
+    display: block;
+    width: 50px;
+}
+
+#desktopLink {
+    /*bottom: 2px;*/
+    /*right: 5px;*/
+    margin: 0px !important;
+    padding: 0px !important;
+    border: 2px blue dotted;
+    font-size: 100%;
+    font-family: sans-serif;
+    vertical-align: baseline;
+    position: fixed;
+    z-index: 2147483634;
+    box-sizing: border-box;
+    width: 150px;
+    height: 20px;
+}
+
+#pphTableC, #rhaclose {
+    float: right;
+}
+#consolidatedDiv {
+    margin-bottom: 20px;
+}
+#textmessageheader, #rhalert, #RHTestDiv {
+    width: -webkit-fit-content;
+    height: -webkit-fit-content;
+    border: 3px solid black;
+    box-sizing: border-box;
+    font-weight: bold;
+}
+
+#loggingstatus, #txtmsgerrors, #monitorstatus {
+    color: red;
+    font-weight: bold;
+}
+
+input[type=number] {
+    width: 50px;
+}
+
+.modalDialog {
+    position: fixed;
+    font-family: Arial, Helvetica, sans-serif;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 99999;
+    opacity: 0;
+    -webkit-transition: opacity 400ms ease-in;
+    -moz-transition: opacity 400ms ease-in;
+    transition: opacity 400ms ease-in;
+    pointer-events: none;
+    overflow: auto;
+}
+
+    .modalDialog > div {
+        width: 400px;
+        position: relative;
+        margin: 10% auto;
+        padding: 5px 20px 13px 20px;
+        border-radius: 10px;
+        background: #fff;
+        background: -moz-linear-gradient(#fff, #999);
+        background: -webkit-linear-gradient(#fff, #999);
+        background: -o-linear-gradient(#fff, #999);
+    }
+
+.close {
+    background: #606061;
+    color: #FFFFFF;
+    line-height: 25px;
+    position: absolute;
+    right: -12px;
+    text-align: center;
+    top: -10px;
+    width: 24px;
+    text-decoration: none;
+    font-weight: bold;
+    -webkit-border-radius: 12px;
+    -moz-border-radius: 12px;
+    border-radius: 12px;
+    -moz-box-shadow: 1px 1px 3px #000;
+    -webkit-box-shadow: 1px 1px 3px #000;
+    box-shadow: 1px 1px 3px #000;
+}
+    .close:hover {
+        background: #00d9ff;
+    }
+
+#msgIframe {
+    display:none;
+}
+#projectmessages {
+    z-index: 99999999;
+    font-size:medium;
+    color:red;
+}
+.multicolor-text {
+    text-align: center;
+    font-size: 15px;
+    background: linear-gradient(to left, violet, indigo, blue, green, yellow, orange, red);
+    -webkit-background-clip: text;
+    color: transparent;
+}
+.inlinespan {
+    display: inline-block;
+}

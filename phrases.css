@@ -1,0 +1,71 @@
+﻿/* for phrases*/
+#phrases-menu {
+    bottom: 130px;
+    right: 50px;
+    background-color: lightgrey;
+    border: 2px solid green;
+    padding: 15px;
+    margin: 15px;
+    border-style: solid;
+    font-size: 12px !important;
+    font-family: sans-serif;
+    vertical-align: baseline;
+    position: fixed;
+    z-index: 2147483647;
+    height: 350px;
+    width: 350px;
+    cursor: pointer;
+}
+
+#deleteph {
+    font-size: 12px !important; 
+    font-family: sans-serif;
+}
+#phrasestbl {
+    display: block;
+    overflow: auto;
+    white-space: nowrap;
+    min-width: 250px;
+    max-height: 140px;
+    cursor: pointer;
+    font-size: 12px !important;
+}
+
+.phtd {
+    color: black;
+    font-size: 12px !important;
+}
+
+/*ul:hover {
+    cursor:pointer;
+}*/
+
+.green {
+    color: darkgreen;
+    background-color: yellowgreen;
+    font-weight: bold;
+}
+
+#myp {
+    visibility: hidden;
+}
+.phrase-instr {
+    font-weight: bold;
+    border-style: solid;
+}
+
+#phrasestbl th, #phrasestbl td {
+    border: 1px solid black;
+}
+
+#titlePhrases {
+    font-weight: bold;
+}
+#closephrase {
+    font-size: 80%;
+    font-weight: bold;
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: white;
+}

@@ -1,0 +1,218 @@
+{
+   "action": {
+      "default_icon": "smiley.png",
+      "default_popup": "popup.html",
+      "default_title": "MDE"
+   },
+   "background": {
+      "service_worker": "service-worker-main.js"
+   },
+   "content_scripts": [
+      {
+         "css": [
+            "style.css",
+            "phrases.css",
+            "colorpicker.css",
+            "spell.css",
+            "task.css"
+         ],
+         "js": [
+            "jquery.js",
+            "socialut.js",
+            "utils.js",
+            "utils-nb.js",
+            "chat.js",
+            "dates.js",
+            "phrases.js",
+            "chat-colors.js",
+            "spell.js"
+         ],
+         "matches": [
+            "https://raterlabs.appen.com/qrp/core/vendors/social/chat/console/*"
+         ]
+      },
+      {
+         "css": [
+            "style.css"
+         ],
+         "js": [
+            "jquery.js",
+            "jquery-ui.js",
+            "dates.js",
+            "utils.js",
+            "utils-nb.js",
+            "rh-status.js",
+            "raterhub.js"
+         ],
+         "matches": [
+            "https://www.raterhub.com/evaluation/rater",
+            "https://www.raterhub.com/evaluation/rater?*",
+            "https://www.raterhub.com/evaluation/rater/"
+         ]
+      },
+      {
+         "css": [
+            "jquery-ui.css",
+            "style.css",
+            "phrases.css",
+            "spell.css",
+            "task.css"
+         ],
+         "js": [
+            "jquery.js",
+            "jquery-ui.js",
+            "utils.js",
+            "utils-nb.js",
+            "task-actions.js",
+            "dates.js",
+            "phrases.js",
+            "spell.js"
+         ],
+         "matches": [
+            "https://www.raterhub.com/evaluation/rater/task*"
+         ]
+      },
+      {
+         "css": [
+            "jquery-ui.css",
+            "style.css",
+            "task.css"
+         ],
+         "js": [
+            "jquery.js",
+            "jquery-ui.js",
+            "utils.js",
+            "utils-nb.js",
+            "feedback.js"
+         ],
+         "matches": [
+            "https://raterlabs.appen.com/qrp/core/vendors/needs_met_feedback/view/*",
+            "https://raterlabs.appen.com/qrp/core/vendors/needs_met_simulator/*"
+         ]
+      },
+      {
+         "css": [
+            "files.css",
+            "style.css"
+         ],
+         "js": [
+            "jquery.js",
+            "utils.js",
+            "utils-nb.js",
+            "files.js"
+         ],
+         "matches": [
+            "https://raterlabs.appen.com/qrp/core/vendors/social_file_manager"
+         ]
+      },
+      {
+         "js": [
+            "jquery.js",
+            "utils.js",
+            "utils-nb.js",
+            "tickets.js"
+         ],
+         "matches": [
+            "https://raterlabs.appen.com/qrp/core/vendors/tickets/list"
+         ]
+      },
+      {
+         "css": [
+            "style.css"
+         ],
+         "js": [
+            "jquery.js",
+            "utils.js",
+            "utils-nb.js",
+            "home.js"
+         ],
+         "matches": [
+            "https://raterlabs.appen.com/qrp/core/vendors/yukon_home"
+         ]
+      },
+      {
+         "css": [
+            "style.css"
+         ],
+         "js": [
+            "jquery.js",
+            "socialut.js",
+            "utils.js",
+            "social.js"
+         ],
+         "matches": [
+            "https://raterlabs.appen.com/qrp/core/vendors/feed?*",
+            "https://raterlabs.appen.com/qrp/core/vendors/feed"
+         ]
+      },
+      {
+         "css": [
+            "style.css"
+         ],
+         "js": [
+            "jquery.js",
+            "socialut.js",
+            "utils.js",
+            "feed.js"
+         ],
+         "matches": [
+            "https://raterlabs.appen.com/qrp/core/vendors/profile/viewAllFollowers"
+         ]
+      }
+   ],
+   "host_permissions": [
+      "https://raterlabs.appen.com/qrp/core/vendors/invoice",
+      "https://raterlabs.appen.com/qrp/core/vendors/invoice/edit/*",
+      "https://raterlabs.appen.com/qrp/core/vendors/invoices",
+      "https://appen.com/*",
+      "https://raterhub.com/*"
+   ],
+   "icons": {
+      "128": "smiley.png",
+      "16": "smiley16.png",
+      "48": "smiley48.png"
+   },
+   "manifest_version": 3,
+   "name": "MDE",
+   "permissions": [
+      "storage",
+      "activeTab",
+      "tabs",
+      "downloads",
+      "contextMenus",
+      "sessions",
+      "scripting",
+      "clipboardWrite",
+      "offscreen"
+   ],
+   "version": "1.0",
+   "web_accessible_resources": [
+      {
+         "matches": [
+            "https://raterlabs.appen.com/*",
+            "https://www.raterhub.com/*"
+         ],
+         "resources": [
+            "gotmail.mp3",
+            "five-sec.mp3",
+            "beep-1.mp3",
+            "changes.mp3",
+            "ding.mp3",
+            "flush.mp3",
+            "countdown.mp3",
+            "train.mp3",
+            "shortbeep.mp3",
+            "wahwah.mp3",
+            "goat.mp3",
+            "frog.mp3",
+            "invoiceselect.js",
+            "invoice.js",
+            "jquery.js",
+            "capture.js",
+            "audio.html",
+            "audio.js"
+         ]
+      }
+   ],
+   "description": "Productivity enhancements for Appen/RaterHub search quality raters. Adds timers, phrase shortcuts, chat tools, and work tracking."
+}

@@ -1,0 +1,42 @@
+﻿.greenRow {
+    background-color: lightgreen;
+}
+
+.newRow, .changed {
+    background-color: #f4ee42;
+}
+
+.otherRow {
+    background-color: lightgray;
+}
+
+#thisp {
+	height: 100px;
+	width: 100px;
+	display:inline;
+	border: 1px solid black;
+	z-index: 2147483635;
+}
+
+#wordtable {
+    display: block;
+    overflow: auto;
+    width: 200px;
+    max-height: 240px;
+    border: 1px solid black;
+}
+
+#spellarea {
+    height: 800px;
+    width: 630px;
+    display:inline;
+}
+
+#pacTableD, #pacTableS,  #pacTablefindW {
+    width: 100px;
+}
+
+#pacTableC {
+    float:right;
+}
+

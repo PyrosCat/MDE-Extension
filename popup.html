@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>MDE</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="spell.css" />
+    <script src="jquery.js"></script>
+    <script src="utils.js"></script>
+    <script src="utils-nb.js"></script>
+    <script src="popup.js"></script>
+    <script src="invoice.js"></script>
+    <script src="dates.js"></script>
+    <script src="sendmsg.js"></script>
+</head>
+<body>
+    <div id="notTracker">
+        
+        <button type="button" class="smallbut" id="mdefaq" title="Frequently Asked Questions">Show FAQ</button>
+        <a id="FaceBook" style="margin:10px;" href="https://www.facebook.com/profile.php?id=61589352875289" target="_blank">facebook</a>
+        <p id="mdefaqwarea">
+            <!--<embed id="mdefaqwarea" src="mdefaq.pdf"  width="575" height="500"> chrome bug stops this from working well-->
+            <b>For quick help with any MDE option, hover over the checkbox on the popup menu.</b><br>
+            <!--<a style="margin:10px;" href="https://www.facebook.com/profile.php?id=61589352875289" target="_blank">Developer's facebook page. I post stuff there related to this extension.</a><br>-->
+            <b>Privacy Policy</b><br>
+            This extension requests these permissions for these reasons:<br>
+            "storage" - your options selected and timing data (if enabled) are stored in local storage<br>
+            "activeTab" - in some cases, MDE will open a new tab (for instance when you request a screen shot)<br>
+            "tabs" - some options will change the tab title, this permission allows for this.<br>
+            "downloads" - backups of trackers data are taken daily (you will be asked if you want to save the download)<br>
+            "contextMenus" - the option to take a screen shot is a right click/context menu action<br>
+            <b>Change Log</b><br>
+            <b>MDE 1.0</b> <br>
+            --  Made some changes to faciliate the MDE alert sounds.<br>
+            --  If you hover over the AET field in the task details table (or the totals table at the top of the screen), the unadjusted AET will be shown.<br>
+                When you release a task, the AET for the task is set to your work time. This is why this change was added - so you can see the unadjusted AET.<br>
+            <b>The rest of this FAQ is specifically related to the tracker timer.</b><br>
+            <b>How do I start using the timer?</b><br>
+            --	install the extension<br>
+            --	open the popup, select the check box next to "Productivity Tracker"<br>
+            --	Work a task - and submit it<br>
+            <b>How do I get an in task timer?</b><br>
+            --	Open the popup and hit the pink "details" button next to the productivity Tracker<br>
+            --	A new popup is displayed that has info about what you have worked.<br>
+            --	Below the table with tasks (green lines can be clicked to see detail for the day) there is a drop down that says no in-task timer - pull that down and select a time to be warned before the AET is up.<br>
+            --	Next task you work, you will see the count down in the tab header of the task<br>
+            <b>What happens when you hit the back button or navigate away from the task while working?</b><br>
+            A task record is generated and saved. When you go back to the task, there will now be two records in the detail display for this task. When you submit or release the task, the records will be consolidated.<br>
+            <b>How is time on released tasks handled?</b><br>
+            --	The time you worked on the task will be counted for the task<br>
+            --	The task will show up as orange in the detail display<br>
+            --	The AET will be set to the time worked so the productivity calculation is remains correct<br>
+            --	In the AET total for the day and week, the task AET will not be counted.<br>
+            <b>How do I pause in the middle of a task?</b><br>
+            The MDE timer for a task starts when you open a task (select it from raterhub) and stops when you submit, release, or close the task tab without doing either. The only way to pause the MDE timer mid-task is to close the task tab. When you come back to continue the task, and complete it (or release it) the time spent working will be consolidated into one record.<br>
+        </p>
+        <form>
+            <p id="msgTextpop">Mods to activate</p>
+            <p><span id="msgTextret" class="boldtime"></span></p>
+            <input type="checkbox" name="feedbackl" id="FEEDBACKL" />Desktop URL link FB/SIM<br>
+            <input type="checkbox" name="shortcuts" id="SHORTCUTS" />Keyboard Shortcuts  <button type="button" id="helps"><img id="keyshow" src="show.png" width="14" height="14" /></button><br>
+            <p id="keyboardshortcuts" hidden>
+                --	<b>alt-m</b> Open new tab, Google maps positioned on UL (query is copied to the clipboard)  <br>
+                --	<b>alt-q</b> Open new tab, Google Search for the query <br>
+                --	<b>alt-l</b> Open new tab, Google Search for the Query in the users location  <br>
+                --	<b>alt-y</b> Open new tab, Youtube for the query <br>
+                --	<b>alt-i</b> Open new tab, Images for the query <br>
+                --	<b>alt-x</b> Open new tab, Google Play Store for the query <br>
+                --	<b>alt-j</b> Close tabs to the right  <br>
+                --	<b>alt-z</b> Skip to error  <br>
+                --	<b>alt-w</b> Skip to task  <br>
+                --	<b>alt-n</b> Add selected word to auto-correct<br>
+                --	<b>alt-p</b> Add selected phrase to table <br>
+                --	<b>alt-a</b> Open phrase table <br>
+                --	<b>Right Click</b> Take a screen shot <br>
+                --	<b>Right Click URL</b> Open home page for PQ EAT Checking <br>
+            </p>
+            <input type="checkbox" name="sfiles" id="SFILES" />Social File Manager<br>
+            <input type="checkbox" name="tracker" id="TRACKER" />Productivity Tracker
+            <button type="button" class="smallbbut" id="ViewTracker">Details</button>
+            <br>
+            <input type="checkbox" name="rhreload" id="RHRELOAD" />RH Refresh
+            <label class="rhrefreshDisplay" for="rhrefreshsecs">Every</label>
+            <input type="number" id="rhrefreshsecs" class="rhrefreshDisplay" name="rhrefreshsecs" min="60" title="Enter seconds to wait before refreshing. Must be at least 60 seconds." />
+            <span class="rhrefreshDisplay">Secs</span><br>
+            <span class="rhAClass">
+                <input type="checkbox" name="rhreload" id="RHRELOADA" />RH Task Alert&nbsp;<br>
+            </span>
+            <p>
+                <button type="button" id="ssbutt">Sound Settings</button>
+                <!--<button type="button" id="cancelsoundsettings">Cancel</button>-->
+            </p>
+            <div id="soundsettings" style="display:none">
+                <button type="button" id="savesoundsettings">Save Changes</button>
+                <button class="Submit" type="button" id="cancelsoundsettings"><img src="close.png" width="12" height="12" /></button>
+
+                <table>
+                    <tr>
+                        <td><b>Task Timer</b></td>
+                        <td><button type="button" id="playtimeralertsound" class="smallnbut" title="Play current sound">Current</button></td>
+                        <td>
+                            <select name="tasktimersound" id="tasktimersound" title="Sound Options">
+                                <!--<option value="beep-1.mp3">Beep</option>
+    <option value="five-sec.mp3" selected>Ding Dong</option>
+    <option value="changes.mp3">ChaChanges</option>
+    <option value="countdown.mp3">Countdown</option>
+    <option value="ding.mp3">Ding</option>
+    <option value="flush.mp3">Splash</option>
+    <option value="train.mp3">Train</option>
+    <option value="shortbeep.mp3">Short Beep</option>-->
+                            </select>
+                        </td>
+                        <td><button type="button" id="resettimeralertsound" class="smallnbut">Reset</button></td>
+                    </tr>
+                    <tr>
+                        <td><b>Chat Alert</b></td>
+                        <td>
+                            <button type="button" id="playchatalertsound" class="smallnbut" title="Play current sound">Current</button>
+                        </td>
+                        <td>
+                            <select name="chatalertsound" id="chatalertsound" title="Sound Options">
+                                <!--<option value="beep-1.mp3" selected>Beep</option>
+                                <option value="five-sec.mp3">Ding Dong</option>
+                                <option value="changes.mp3">ChaChanges</option>
+                                <option value="countdown.mp3">Countdown</option>
+                                <option value="ding.mp3">Ding</option>
+                                <option value="flush.mp3">Splash</option>
+                                <option value="train.mp3">Train</option>
+                                <option value="shortbeep.mp3">Short Beep</option>-->
+                            </select>
+                        </td>
+                        <td><button type="button" id="resetchatalertsound" class="smallnbut">Reset</button></td>
+                    </tr>
+                    <tr>
+                        <td><b>Start of NRT</b></td>
+                        <td><button type="button" id="playnrtstartalertsound" class="smallnbut" title="Play current sound">Current</button></td>
+                        <td>
+                            <select name="nrtstartalertsound" id="nrtstartalertsound" title="Sound Options">
+                                <!--<option value="none">None</option>
+                                <option value="beep-1.mp3">Beep</option>
+                                <option value="five-sec.mp3">Ding Dong</option>
+                                <option value="changes.mp3" selected>ChaChanges</option>
+                                <option value="countdown.mp3">Countdown</option>
+                                <option value="ding.mp3">Ding</option>
+                                <option value="flush.mp3">Splash</option>
+                                <option value="train.mp3">Train</option>
+                                <option value="shortbeep.mp3">Short Beep</option>
+                                <option value="wahwah.mp3">Sad Trombone</option>-->
+                            </select>
+                        </td>
+                        <td><button type="button" id="resetnrtstartalertsound" class="smallnbut">Reset</button></td>
+                    </tr>
+
+                    <tr>
+                        <td><b>End of NRT</b></td>
+                        <td><button type="button" id="playnrtendalertsound" class="smallnbut" title="Play current sound">Current</button></td>
+                        <td>
+                            <select name="nrtendalertsound" id="nrtendalertsound" title="Sound Options">
+                                <!--<option value="beep-1.mp3">Beep</option>
+                                <option value="five-sec.mp3">Ding Dong</option>
+                                <option value="changes.mp3" selected>ChaChanges</option>
+                                <option value="countdown.mp3">Countdown</option>
+                                <option value="ding.mp3">Ding</option>
+                                <option value="flush.mp3">Splash</option>
+                                <option value="train.mp3">Train</option>
+                                <option value="shortbeep.mp3">Short Beep</option>-->
+                            </select>
+                        </td>
+                        <td><button type="button" id="resetnrtendalertsound" class="smallnbut">Reset</button></td>
+                    </tr>
+                    <tr>
+                        <td><b>Task Alert</b></td>
+                        <td><button type="button" id="playtaskalertsound" class="smallnbut" title="Play current sound">Current</button></td>
+                        <td>
+                            <select name="taskalertsound" id="taskalertsound" title="Sound Options">
+                                <!--<option value="beep-1.mp3">Beep</option>
+                                <option value="five-sec.mp3">Ding Dong</option>
+                                <option value="changes.mp3">ChaChanges</option>
+                                <option value="countdown.mp3">Countdown</option>
+                                <option value="ding.mp3" selected>Ding</option>
+                                <option value="flush.mp3">Splash</option>
+                                <option value="train.mp3">Train</option>
+                                <option value="shortbeep.mp3">Short Beep</option>-->
+                            </select>
+                        </td>
+                        <td><button type="button" id="resettaskalertsound" class="smallnbut">Reset</button></td>
+                    </tr>
+                </table>
+            </div>
+            <b>Chat</b><br>
+            <input type="checkbox" name="phrases" id="phrases" title="Allows you to save commonly used comment phrases" />Phrases <input type="checkbox" name="phsent" id="phsent" />Sentences
+            <button type="button" id="phaseDisplay"><img id="phaseDisplayeye" src="show.png" width="14" height="14"></button><br>
+            <input type="checkbox" name="spell" id="spell" title="Automatically inserts customized spelling corrections. Try it, you will like it." />Autocorrect
+            <button type="button" id="actable" title="View Autocorrect table"><img id="actableeye" src="show.png" width="14" height="14"></button>
+
+            <!--Icon made from www.flaticon.com-->
+            <br>
+            <input type="checkbox" name="imageh" id="imageh" title="Allows you to see assigned nicknames in Chat. To get a nickname assign for you, contact MDE support" />Enable Chat Nicknames<br>
+            <input type="checkbox" name="colorp" id="colorp" hidden /><span hidden>Use OS Color Picker<br></span>
+            <input type="checkbox" name="reda" id="reda" />Red Posting Alert<br>
+            <label for="chatname">Posters(Chat Name) Alert</label>
+            <input type="text" id="chatname" name="chatname" size="20" value="" class="txtChanged" /><br>
+            <label for="phrase">Any Phrase(s) Alert</label>
+            <input type="text" id="phrase" name="phrase" size="20" value="" class="txtChanged" title="Enter one or more words separated by a comma. To filter on an exact phrase, enclose it in double quotes." /> <br>
+            <p id="textmessageheader">
+                <span>Text Messaging Setup</span>
+            </p>
+            <p id="txtmsgerrors" hidden></p>
+            <label for="useremail">Email</label>
+            <input type="text" id="useremail" name="useremail" size="15" value="" title="This feature has been disabled with this release of MDE V3. I plan to re-enable it in the new future." />
+            <button type="button" title="This feature has been disabled with this release of MDE V3. I plan to re-enable it in the new future." id="rhalertcontrol"><img id="rhalertcontroleye" src="show.png" width="14" height="14"></button><br>
+            <!--<button type="button" id="rhalertcontrol"><img id="rhalertcontroleye" src="show.png" width="14" height="14"></button><br>-->
+            <div id="rhalert" hidden>
+            </div>
+        </form>
+        <p id="links">
+            <a href="https://raterlabs.appen.com/qrp/core/vendors/document/view/18" target="_blank">GG Online</a><br>
+            <a href="https://raterlabs.appen.com/qrp/core/vendors/document/view/21" target="_blank">SxS Online</a><br>
+            <a href="https://raterlabs.appen.com/qrp/core/vendors/toolbar_download/view/1" target="_blank">Yukon and Approved Extensions List</a><br>
+            <a href="https://raterlabs.appen.com/qrp/core/vendors/document/view/57?node.id=2810" target="_blank">General Rater Availability Requirements</a><br>
+            <a href="https://raterlabs.appen.com/qrp/core/vendors/project_site/1/7323" target="_blank">Form to report daily NRT</a><br>
+            <a href="https://raterlabs.appen.com/qrp/core/vendors/project_site/1/30424" target="_blank">Form to report unavailability</a><br>
+            <a href="https://raterlabs.appen.com/qrp/core/vendors/project_site/1/4" target="_blank">RL Policies Page</a><br>
+            <a href="https://raterlabs.appen.com/qrp/core/vendors/document/view/89?node.id=12614" target="_blank">Technical Troubleshooting from RL</a><br>
+            <a href="https://raterlabs.appen.com/qrp/core/vendors/document/view/10?node.id=16260" target="_blank">Task Troubleshooting Form</a><br>
+            <a href="https://raterlabs.appen.com/qrp/core/vendors/document/view/89" target="_blank">RL Communications/Contacts</a><br>
+            <a href="https://appen-yukon.workramp.io/paths" target="_blank">Yukon Learning Center</a><br>
+            <button type="button" class="smallnbut" id="ViewLog" title="View Log">NRT Log</button><br>
+        </p>
+        <p id="NRTLOGMSGP">
+            <textarea id="NRTLOGMSG"></textarea><br>
+            <button type="button" class="smallbut" id="CloseLog">Close Log</button>
+            <button type="button" class="smallbut" id="ClearLog">Clear Log</button>
+            <button type="button" class="smallbut" id="ConfLog">Confirm</button>
+        </p>
+    </div>
+    <div id="trackersubMenu">
+        <span id="boxmsgx" class="boldtime" title="If you need to delete/re-install MDE, take a backup first (using the download button), do the clear, and hold down the ctrl key and press download button to restore from your backup.">
+            This Data is for informational purposes only.
+        </span>
+        <button class="Submit" type="button" id="closeTracker"><img src="close.png" width="12" height="12" /></button>
+        <p id="status"></p>
+        <p id="trackerMsg"></p>
+        <p id="trackertotals">
+            <table id="overall">
+                <tr>
+                    <td id="week1aetdesc" title="AET for released tasks is set to time worked on the task."></td>
+                    <td id="week1aet" class="boldtime">
+                    </td>
+                    <td>Time Worked</td>
+                    <td id="week1time" class="boldtime"></td>
+                </tr>
+                <tr>
+                    <td id="week2aetdesc" title="AET for released tasks is set to time worked on the task."></td>
+                    <td id="week2aet" class="boldtime">
+                        <input id="week2raet" type="hidden">
+                    </td>
+                    <td>Time Worked</td>
+                    <td id="week2time" class="boldtime"></td>
+                </tr>
+                <tr>
+                    <td>Total</td>
+                    <td id="overallaet" class="boldtime"> 
+                    <input id="overallraet" type="hidden"></td>
+                    <td></td>
+                    <td id="overalltime" class="boldtime"></td>
+                </tr>
+            </table>
+        </p>
+        <div id="consolidatedDiv">
+            <button class="Submit" type="button" id="consolidated" title="Daily total for all devices MDE is installed on.">Consolidated Totals</button>
+            <label for="thiscomputer" style="font-weight:bold">This Device Name</label>
+            <input type="text" id="thiscomputer" name="thiscomputer" maxlength="10" value="" /> <button type="button" id="saveCName" disabled>&#10004</button><br>
+            <p>
+                <div style="margin-top:2px;">
+                    <span>Invoice</span>
+                    <select name="when" id="when" title="Select period for consolidated totals or invoice."></select>
+                    <button class="Submit" type="button" id="totals" title="Invoice is built according to Pacific Time Zone ">Invoice</button>
+                    <input type="checkbox" name="iInvoice" id="iInvoice" title="If you are an international rater, check this box" /><b>Int'l </b>
+                    <select name="wheni" id="wheni" title="Select period for consolidated totals or invoice." hidden></select>
+                </div>
+            </p>
+
+        </div>
+        <div id="consolidatedTableHeader">
+            <p id="invoiceC">
+                <button class="Submit" type="button" id="fillinvoiceC">Fill Invoice</button>
+                <input type="checkbox" name="updateallowed" id="updateallowedC" title="When checked, existing records will not be modified." /><b>No update to existing timecard records</b>
+            </p>
+            <span class="redtitle">Google Sync must be enabled for totals to be shared across devices.<br>Consolidated totals are shown according to LOCAL timezone.</span>
+        </div>
+        <p id="invoice" hidden>
+            After you hit "Fill Invoice", the RL timecard page will be opened. Hit the "Create" button or select the invoice for this period if you already have created one. <br>
+            <button class="Submit" type="button" id="fillinvoice">Fill Invoice</button>
+            <input type="checkbox" name="updateallowed" id="updateallowed" title="When checked, existing records will not be modified." /><b>No update to existing timecard records</b>
+            <!--<input type="checkbox" name="international" id="international" title="If you are an international user, check this box to switch URLs for invoicing. This may not work.. I can't test this since I am a US user.'" /><b>International User</b>-->
+            <!--<br><span id="invoiceHeaderMsg"></span>-->
+        </p>
+        <div id="normalTableHeader">
+            <div style="float:left">
+                <span id="trackerHeader"></span><br>
+            </div>
+            <button type="button" id="convertP" title="Set timezone for task records, Pacific or Local">Set to Pacific</button>
+            <select name="filterDetail" id="filterDetail" title="Filter task detail records">
+                <option value="none" selected>No Filter</option>
+                <option value="r">Released</option>
+                <option value="nc">Incomplete</option>
+                <option value="ip">InProgress</option>
+            </select>
+            <br> <b>Value to use on AET Ranges:</b>
+            <input type="radio" id="highaetrange" name="aetrange" class="aetrangeradios" value="HIGH">
+            <label for="highaetrange">High</label>
+            <!--<input type="radio" id="lowaetrange" name="aetrange" class="aetrangeradios" value="LOW">
+            <label for="lowaetrange">Low</label>-->
+            <input type="radio" id="midaetrange" name="aetrange" class="aetrangeradios" value="MID">
+            <label for="midaetrange">Mid</label>
+            <input type="radio" id="realaetrange" name="aetrange" class="aetrangeradios" value="REAL">
+            <label for="midrealaetrange">Real</label><br>
+        </div>
+        <div id="trackertablediv">
+            <table id="trackerTable" class="tableClass">
+                <thead>
+                    <tr>
+                        <th align="center">Date</th>
+                        <th align="center">Task(s)</th>
+                        <th align="center">AET</th>
+                        <th align="center">WorkTime</th>
+                        <th align="center">Surplus</th>
+                        <th align="left" id="detdesc">Productivity %</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <p id="legend">
+            <span class="inline-flex">
+                <b>Legend:</b>
+                <span class="greenI">Current Pay Period </span><span class="dateWork">Prior Pay Periods </span>
+                <span class="inprogressC" title="Task is in progress, hasn't been completed yet">In Progress</span>
+                <span class="incompleteC" title="Task was not submitted or released before you closed the task tab">Incomplete</span>
+                <span class="releasedC" title="When you release a task the AET for the task is set to the time you spent working on the task.">Released</span>
+                <button type="button" id="moreT" title="Click for more info on task status types">More ...</button>
+
+            </span>
+        </p>
+        <div id="afterTable">
+            <div id="savechangediv">
+                <p>
+                    <!--<input type="checkbox" name="rptheaders" id="rptheaders" hidden />
+    <button type="button" id="backupTracker" hidden>Backup</button>-->
+                    <input type="checkbox" name="tabtimer" id="tabtimer" title="In Task Timer. Format of time in the tab header is:task/day/week" /><b>Task Timer</b>
+                    <select name="subAlert" id="subAlert" title="To get a sound when time is almost up.">
+                        <option value="none" selected>No audible alarm</option>
+                        <option value="5">beep at 5 Seconds</option>
+                        <option value="10">beep at 10 Seconds</option>
+                        <option value="15">beep at 15 Seconds</option>
+                        <option value="30">beep at 30 Seconds</option>
+                    </select>
+                    <label for="beforeautoD"><b>Keep Recs</b></label>
+                    <input type="number" id="beforeautoD" name="beforeautoD" value="90"><b>Days</b>
+                    <select name="backupOpts" id="backupOpts" title="Backup Options">
+                        <option value="none" selected><b>Backup Opts</b></option>
+                        <option class="selectclick" value="A">Daily</option>
+                        <option class="selectclick" value="R">Headers</option>
+                        <option class="selectclick" value="B">Now</option>
+                    </select><br>
+                    <b>Timer Display Option:</b>
+                    <input type="radio" id="oldtasktimer" name="timeropts" class="timerradios" value="OLD">
+                    <label for="oldtasktimer">AET Countdown</label>
+                    <input type="radio" id="newtasktimer" name="timeropts" class="timerradios" value="NEW">
+                    <label for="newtasktimer">AET Timer/HH:MM/HH:MM</label><br>
+                    <input type="checkbox" name="warnincomplete" id="warnincomplete" title="Get warning for incomplete tasks"/><b>Alert for incomplete tasks</b>
+                    <button type="button" id="savetracker" hidden>Save Changes</button>
+                </p>
+            </div>
+        </div>
+        <p id="aftertasks">
+            <button type="button" id="rebuildConsolidated" color="red" title="Manually recalcuate daily totals for this device in your consolidated database">Rebuild Consolidated</button><br><br>
+            <button type="button" class="Submit" id="restoreTrack" title="Restore Task data from a MDE backup">Restore Task Data</button><br><br>
+            <button type="button" class="Submit" id="clearTrack">Delete Task Data</button>
+        </p>
+
+
+    </div>
+    <p id="autoCTitle" align="center">
+        Auto Correct Table
+        <button type="button" class="tinybut" id="pacTableC" title="Close Table"><img src="close.png" width="12" height="12" /></button>
+    </p>
+    <div id="spellArea">
+        <input id="pacTablefindW" type="text" size="10" title="Enter word-phrase for search">
+        <button class="tinybut" type="button" id="pacTableF" title="Search for word-phrase"><img src="search.png" width="12" height="12" /></button>
+        <br>
+        <button class="tinybut" type="button" id="pacTableA" title="Add word"><img src="plus.png" width="12" height="12" /></button>
+        <button class="tinybut" type="button" id="pacTableE" title="Export Table"><img src="export.png" width="12" height="12" /></button>
+        <button class="tinybut" type="button" id="pacTableI" title="Import Table"><img src="import.png" width="12" height="12" /></button>
+        <br>
+        <button class="Submit" type="button" id="pacTableD" title="Selected rows will be delete immediately">Delete Selected Rows</button>
+        <button class="Submit" type="button" id="pacTableS" title="Save rows updated or added">Save Adds and Updates</button>
+    </div>
+    <p id="autoPTitle" align="center">
+        Phrase Table
+        <button type="button" class="tinybut" id="pphTableC" title="Close Table"><img src="close.png" width="12" height="12" /></button>
+    </p>
+    <div id="phraseArea">
+        <input id="pphTablefindW" type="text" size="10" title="Enter phrase for search">
+        <button class="tinybut" type="button" id="pphTableF" title="Search for phrase"><img src="search.png" width="12" height="12" /></button>
+        <br>
+        <button class="tinybut" type="button" id="pphTableA" title="Add phrase"><img src="plus.png" width="12" height="12" /></button>
+        <button class="tinybut" type="button" id="pphTableE" title="Export Table"><img src="export.png" width="12" height="12" /></button>
+        <button class="tinybut" type="button" id="pphTableI" title="Import Table"><img src="import.png" width="12" height="12" /></button>
+        <br>
+        <button class="Submit" type="button" id="pphTableD" title="Selected rows will be delete immediately">Delete Selected Rows</button>
+        <button class="Submit" type="button" id="pphTableS" title="Save rows updated or added">Save Adds and Updates</button>
+    </div>
+    <p id="restoreallarea">
+        <button type="button" id="exportAll" title="Backup all MDE Data"><img src="export.png" width="12" height="12" />Backup All</button><br>
+        <button type="button" id="importAll" title="Restore all MDE Data from backup"><img src="import.png" width="12" height="12" />Restore All</button><br>
+        <button type="button" id="importJustTrack" title="Restore MDE tracker task data"><img src="import.png" width="12" height="12" />Restore Task History</button><br>
+    <p>For help you can always email me at <b>mdipros48@gmail.com</b></p>
+    </p>
+    <div id="openModal" class="modalDialog">
+        <div>
+            <a href="#close" title="Close" class="close">X</a>
+            <p class="inprogressC">
+                When a task is acquired from the RH index, and you are working it with an open tab, the task status will be in progress.
+            </p>
+            <p class="incompleteC">
+                After aquiring a task, if the tab with the task is closed via you hitting the cancel button, or closing the tab without submitting or releasing,
+                the task will be marked as incomplete. Once you reaquire the task (with the Continue button from the RH index), a new record will be created for it, you will see that new record in pink as
+                an in progress task. MDE will now show two records for the task, one will be blue, marked as incomplete, and the other will be pink, marked as in progress. After finally submitting or releasing the task, the two records will be merged and you will now see the status changed to either submitted (record will have no background color) or released (orange).
+            </p>
+            <p class="incompleteC">
+                If you have an incomplete task, and you think you actually did submit it, you can change the status to be submitted by clicking on the work time field for its entry. After clicking this field,
+                to the right of the record, you will see buttons that can be used to modify this record. One of them is "2SUB" - this is the button to mark the task as submitted. You can also delete the
+                record with the "Delete Row" button.
+            </p>
+
+            <p class="releasedC">
+                If you have released a task, it will be marked as released. When you release a task the AET for the task is set to the time you spent working on it before releasing.
+                This is why the AET you see for the day or week may not match the true AET. This is done for two reasons; to keep the productivity rate accurate and your work time field will reflect your time worked on it, even when you have released it.
+            </p>
+            <p>
+                There have been times that for some reason MDE will fail to record a task correctly. Reasons could be an undiscovered bug in its code, or some weird thing happening on your computer. For instance, if you start getting a
+                lot of incomplete tasks, or MDE doesn't record the AET or work time correctly for multiple tasks, please let me know, this is not a normal occurance, and at that point your best option is to rely on another method for time keeping until the reason is found. This sounds
+                kind of worrisome. It is! Sometimes new tasks will come along or things will happen that MDE doesn't account for. If you let me know I can investigate whats going on, and fix it! TIA.
+            </p>
+
+        </div>
+    </div>
+</body>
+</html>
