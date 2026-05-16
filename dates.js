@@ -534,7 +534,7 @@ Date.prototype.adjustMins = function (mins) {
 
 Date.prototype.subMins = function (mins) {
     let dat = new Date(this.valueOf());
-    dat.setDate(dat.getTime() - (mins * 60000));
+    dat.setTime(dat.getTime() - (mins * 60000));
     return dat;
 }
  
@@ -585,38 +585,46 @@ function dateFromHTML(str) {
 let TDATE = "JDate";
 let SDATE = "MM/DD/YY";
 
-let dst =
-    [{ y: "2015", s: "3/8/2015 02:00 AM", e: "11/1/2015  02:00 AM" },
-        { y: "2016", s: "3/13/2016  02:00 AM", e: "11/6/2015  02:00 AM" },
-        { y: "2017", s: "3/12/2017  02:00 AM", e: "11/5/2017  02:00 AM" },
-        { y: "2018", s: "3/11/2018  02:00 AM", e: "11/4/2018  02:00 AM" },
-        { y: "2019", s: "3/10/2019  02:00 AM", e: "11/3/2019  02:00 AM" },
-        { y: "2020", s: "3/8/2020  02:00 AM", e: "11/1/2020  02:00 AM" },
-        { y: "2021", s: "3/14/2021  02:00 AM", e: "11/7/2021  02:00 AM" },
-        { y: "2022", s: "3/13/2022  02:00 AM", e: "11/6/2022  02:00 AM" },
-        { y: "2023", s: "3/12/2023  02:00 AM", e: "11/5/2023  02:00 AM" },
-        { y: "2024", s: "3/10/2024  02:00 AM", e: "11/3/2024  02:00 AM" }];
-// does user have daylight savings time..
-
-//ca is 7 hours if dst, 8 if not
 /**
- * Return the UTC offset in hours for the US/Canada Pacific time zone.
+ * Return the second Sunday of a given month and year as a Date at 02:00 local time.
  *
- * @param {*} input
- * @returns {*}
+ * @param {number} year
+ * @param {number} month  0-based (0 = January)
+ * @returns {Date}
  */
-function getCaOffset(input) {
-    let i;
-    let thisDate = new Date(input);
-    for (i = 0; i < dst.length; i++) {
-        if (dst[i].y == thisDate.getFullYear()) {
-            let start = new Date(dst[i].s);
-            let end = new Date(dst[i].e);
-            if (input >= start && input <= end)
-                return (7*60);
+function nthSundayOfMonth(year, month, n) {
+    let count = 0;
+    for (let day = 1; day <= 31; day++) {
+        let d = new Date(year, month, day);
+        if (d.getMonth() !== month) break;
+        if (d.getDay() === 0) {
+            count++;
+            if (count === n) {
+                return new Date(year, month, day, 2, 0, 0);
+            }
         }
     }
-    return (8*60);
+    return null;
+}
+
+//ca is UTC-7 (PDT) during DST, UTC-8 (PST) outside it.
+//US DST runs from the second Sunday of March at 02:00 to the first Sunday of November at 02:00.
+/**
+ * Return the UTC offset in minutes for the US/Canada Pacific time zone at a given instant.
+ * Uses the standard US DST rule (second Sunday March → first Sunday November) rather than
+ * a hard-coded year table, so it never needs manual updating.
+ *
+ * @param {Date} input
+ * @returns {number}  420 (PDT, UTC-7) or 480 (PST, UTC-8)
+ */
+function getCaOffset(input) {
+    let d = new Date(input);
+    let year = d.getFullYear();
+    let dstStart = nthSundayOfMonth(year, 2, 2); // second Sunday of March
+    let dstEnd   = nthSundayOfMonth(year, 10, 1); // first Sunday of November
+    if (d >= dstStart && d < dstEnd)
+        return (7 * 60); // PDT: UTC-7
+    return (8 * 60);     // PST: UTC-8
 }
 
 //input is always a javascript date. output type can be STRING or TDATE (javascript date)

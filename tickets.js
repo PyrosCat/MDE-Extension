@@ -7,11 +7,11 @@ window.addEventListener("load", function () {
             let rows = table.getElementsByTagName("tr");
             if (rows.length == 0) {
                 setTimeout(function () {
-                    btickets_wait4it(table);
+                    tickets_wait4it(table);
                 }, 1000);
             }
             else
-                btickets_realCheck(table,rows);
+                tickets_realCheck(table,rows);
         }
     });
 });
@@ -25,11 +25,11 @@ function tickets_wait4it(table) {
     let rows = table.getElementsByTagName("tr");
     if (rows.length == 0) {
         setTimeout(function () {
-            btickets_wait4it(table);
+            tickets_wait4it(table);
         }, 1000);
     }
     else
-        btickets_realCheck(table,rows);
+        tickets_realCheck(table,rows);
 }
 
 /**

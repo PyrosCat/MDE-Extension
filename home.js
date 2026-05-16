@@ -18,11 +18,11 @@ function chk4messages() {
             let rows = table.getElementsByTagName("tr");
             if (rows.length == 0) {
                 setTimeout(function () {
-                    bhome_wait4it(table, ifrm.src);
+                    home_wait4it(table, ifrm.src);
                 }, 1000);
             }
             else
-                bhome_realCheck(table, rows);
+                home_realCheck(table, rows);
         }
     });
 }
@@ -37,11 +37,11 @@ function home_wait4it(table,url) {
     let rows = table.getElementsByTagName("tr");
     if (rows.length == 0) {
         setTimeout(function () {
-            bhome_wait4it(table);
+            home_wait4it(table);
         }, 1000);
     }
     else
-        bhome_realCheck(table, rows, url);
+        home_realCheck(table, rows, url);
 }
 
 /**

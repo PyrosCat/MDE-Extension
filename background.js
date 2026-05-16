@@ -1669,12 +1669,8 @@ function real_myListener(request, sender, sendResponse) {
                 "apikey": msgObj.apikey,
                 "message": null
             };
-            updateUser(function () {
-                saveControlObj();
-            },
-                s_parms,
-                //not there have to add them
-                function (status) { console.log("update of user failed", status); });
+            // SMS backend removed — save locally only
+            saveControlObj();
         }
         else {
             saveControlObj();

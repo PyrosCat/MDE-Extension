@@ -1,32 +1,22 @@
 /*
  * window.addEventListener("load", function() {
-  let elements = document.getElementsByClassName("rainbowText");
-  for (let i = 0; i < elements.length; i++) {
-    generateRainbowText(elements[i]);
-  }
-});
-
-/**
- * Return the current rater's alias name from the chat user list.
+ *   let elements = document.getElementsByClassName("rainbowText");
+ *   for (let i = 0; i < elements.length; i++) {
+ *     generateRainbowText(elements[i]);
+ *   }
+ * });
  *
- * @param {Object} element
+ * function generateRainbowText(element) {
+ *   let text = element.innerText;
+ *   element.innerHTML = "";
+ *   for (let i = 0; i < text.length; i++) {
+ *     let charElem = document.createElement("span");
+ *     charElem.style.color = "hsl(" + (360 * i / text.length) + ",80%,50%)";
+ *     charElem.innerHTML = text[i];
+ *     element.appendChild(charElem);
+ *   }
+ * }
  */
-function generateRainbowText(element) {
-  let text = element.innerText;
-  element.innerHTML = "";
-  for (let i = 0; i < text.length; i++) {
-    let charElem = document.createElement("span");
-    charElem.style.color = "hsl(" + (360 * i / text.length) + ",80%,50%)";
-    charElem.innerHTML = text[i];
-    element.appendChild(charElem);
-  }
-}
-p {
-  font-size: 2em;
-  font-weight: 500;
-}
-<p class="rainbowText">This is an awesome text</p>
-*/
 
 let colorOption = { id: "", normal: "", custom: "" };
 let myAlias = "none";
@@ -1525,3 +1515,39 @@ function getMyAlias() {
     //'<input type="color" id="chfColor">' +
     //'<input type="color" id="chbColor">' +
 //    '</div>' +
+
+// ---------------------------------------------------------------------------
+// Stub implementations for the legacy "bootstrap color picker" path.
+// These are called when s_useOS is false (non-OS-native color picker mode).
+// The full implementations were removed with the bootstrap dependency.
+// TODO: re-implement or permanently gate on s_useOS = true.
+// ---------------------------------------------------------------------------
+
+/**
+ * Apply dark-mode styling to the chat table.
+ * Stub — legacy bootstrap path. Full implementation removed with bootstrap.
+ *
+ * @param {boolean} on
+ */
+function turnDark(on) {
+    // no-op until reimplemented
+}
+
+/**
+ * Display the color-choice panel using the legacy bootstrap picker.
+ * Stub — legacy bootstrap path. Full implementation removed with bootstrap.
+ */
+function bootshowColorChoices() {
+    // no-op until reimplemented
+}
+
+/**
+ * Apply color settings from the legacy bootstrap color picker controls.
+ * Stub — legacy bootstrap path. Full implementation removed with bootstrap.
+ *
+ * @param {boolean} initButtons
+ * @param {Object|null} optData
+ */
+function setColorsfromBoot(initButtons, optData) {
+    // no-op until reimplemented
+}

@@ -229,11 +229,10 @@ function convertAET(aet, range) { //input is string, output is string
     else {
         let tAET = parseFloat(newAET).toFixed(1);
         newAET = tAET.toString();
-        aetStr = newAET;
     }
 
     let pieces = newAET.split('.');
-    let aetStr = aet;
+    let aetStr = newAET;
     let fraction = 0
     if (pieces.length > 0) {
         //first minutes
@@ -1253,7 +1252,7 @@ function mde_logwrite(str) {
         return;
     }
 
-    if (s_isValidChromeRuntime())
+    if (isValidChromeRuntime())
         //get existing storge string
         chrome.storage.local.get('mdeLog', function (data) {
             if (chrome.runtime.error) {

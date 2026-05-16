@@ -41,6 +41,14 @@ let checkMark = '\u2714';
 let nocheckMark = "   ";
 let beenHere = false;
 let s_headers = false;
+let timer = "";
+let selStr = "";
+let val2Check = "";
+let retColor = "black";
+let nlchar = 0;
+let nl = "";
+let newSound = null;
+let wS = "";
 
 let defaultHelp = 'MDE v.1.0(05/08/2026). Change log has been moved to the FAQ section. If you find this extension helpful, please consider supporting my development efforts. Ways to do this can be found by clicking on my facebook link, top right of this menu.';
 let help = {
@@ -81,7 +89,6 @@ let help = {
     "rhalertcontroleye": "View and control when you want to receive a text message alert. Alerts can be set for RH index changes or chat posts"
 };
 
-let enhancements;
 let indexMsgOpts = 3;
 // these are defined here and in background
 // hardcoded indexes
@@ -376,7 +383,6 @@ function setupPop(inEnhancements, inPhraseArray, sounds, clearRestoreArea) {
     let compb1;
     let newVal;
     let objRecs;
-    let s_headers;
     let val;
     let x;
     popup_PhraseArray = inPhraseArray;
@@ -1026,8 +1032,8 @@ window.addEventListener('load', function (evt) {
     });
 
     $("#fillinvoiceC").click(function (ev) {
-        updateallowed = $('#updateallowedC').is(":checked");
-        international = $("#iInvoice").is(":checked");
+        let updateallowed = $('#updateallowedC').is(":checked");
+        let international = $("#iInvoice").is(":checked");
         invoiceFromTable(updateallowed, international);
     });
 
@@ -1066,17 +1072,16 @@ window.addEventListener('load', function (evt) {
     });
 
     $("#pacTableI").click(function (ev) {
-        fileSelector = document.createElement('input');
+        let fileSelector = document.createElement('input');
         fileSelector.setAttribute('type', 'file');
-        selectDialogueLink = document.createElement('a');
+        let selectDialogueLink = document.createElement('a');
         selectDialogueLink.setAttribute('href', '');
         selectDialogueLink.innerText = "Select File";
         $(fileSelector).change("change", function () {
             if (fileSelector.files.length == 1) {
-                reader = new FileReader();
-                data;
-                reader.onload = function (data) {
-                    data = reader.result;
+                let reader = new FileReader();
+                reader.onload = function () {
+                    let data = reader.result;
                     processSPFile(reader.result);
                 };
                 reader.readAsText(fileSelector.files[0]);
@@ -1240,7 +1245,7 @@ window.addEventListener('load', function (evt) {
                     let rowClass = "normalRow";
                     if ((i % 2) == 0)
                         rowClass = "otherRow";
-                    trs = '<tr class="' + rowClass + '"><td id="oldword" class="wordtd editTd">' + word2display + '</td>' +
+                    let trs = '<tr class="' + rowClass + '"><td id="oldword" class="wordtd editTd">' + word2display + '</td>' +
                         '<td class="editTd"><div contenteditable>' + correction2display + '</td>'
                     '</tr>';
                     table.find('tbody').append(trs);
@@ -1321,11 +1326,11 @@ window.addEventListener('load', function (evt) {
             table.find('thead').append('<tr class="tblHead"><th>Phrase</th></tr>');
             //first entry in spellArray has null data - don't display it ever
             for (let i = 0; i < words.length; i++) {
-                rowClass = "normalRow";
+                let rowClass = "normalRow";
                 if ((i % 2) == 0)
                     rowClass = "otherRow";
                 let enCoded = encodeURI(words[i].Phrase);
-                trs = '<tr class="' + rowClass + '"><td id="phrasedet" class="wordtd editTd"><div contenteditable>' + words[i].Phrase + '<input id = "phrasedetold" name = "phrasedetold" type = "hidden" value = "' + enCoded + '" ></td></tr>';
+                let trs = '<tr class="' + rowClass + '"><td id="phrasedet" class="wordtd editTd"><div contenteditable>' + words[i].Phrase + '<input id = "phrasedetold" name = "phrasedetold" type = "hidden" value = "' + enCoded + '" ></td></tr>';
                 table.find('tbody').append(trs);
             }
             $('#wordtable').find('> tbody > tr > td').children().on('input', function (el) {
@@ -1355,17 +1360,16 @@ window.addEventListener('load', function (evt) {
     });
 
     $("#pphTableI").click(function (ev) {
-        fileSelector = document.createElement('input');
+        let fileSelector = document.createElement('input');
         fileSelector.setAttribute('type', 'file');
-        selectDialogueLink = document.createElement('a');
+        let selectDialogueLink = document.createElement('a');
         selectDialogueLink.setAttribute('href', '');
         selectDialogueLink.innerText = "Select File";
         $(fileSelector).change("change", function () {
             if (fileSelector.files.length == 1) {
-                reader = new FileReader();
-                data;
-                reader.onload = function (data) {
-                    data = reader.result;
+                let reader = new FileReader();
+                reader.onload = function () {
+                    let data = reader.result;
                     processPHFile(reader.result);
                 };
                 reader.readAsText(fileSelector.files[0]);
@@ -1389,7 +1393,7 @@ window.addEventListener('load', function (evt) {
             // we are searching for a word within the bounds of the table
             if (value2chk < $("#wordtable > tbody").children('tr:last').find('td#phrasedet').text()) {
                 $('#wordtable > tbody > tr').each(function () {
-                    word = $(this).find('td#phrasedet').text();
+                    let word = $(this).find('td#phrasedet').text();
                     if (word.length > 0) {
                         if (word == value2chk) {
                             this.scrollIntoView();
@@ -1397,7 +1401,7 @@ window.addEventListener('load', function (evt) {
                         }
                         else if (word > value2chk) {
                             //backup one
-                            gotoit = $(this).prev();
+                            let gotoit = $(this).prev();
                             if (gotoit[0] == undefined) {
                                 gotoit = $("#wordtable > tbody").children('tr:first');
                             }
@@ -1416,11 +1420,11 @@ window.addEventListener('load', function (evt) {
     });
 
     $("#pphTableA").click(function (ev) {
-        trs = '<tr class="newRow" ><td id="phrasedet" class="wordtd editTd"><div contenteditable></td></tr>';
+        let trs = '<tr class="newRow" ><td id="phrasedet" class="wordtd editTd"><div contenteditable></td></tr>';
         //       trs = '<tr class="newRow"><td id="oldword" class="wordtd editTd"><div contenteditable></td><td class="editTd"><div contenteditable></td></tr>';
 
-        t = $("#wordtable").find('tbody').prepend(trs);
-        gotoit = $("#wordtable > tbody").children('tr:first');
+        let t = $("#wordtable").find('tbody').prepend(trs);
+        let gotoit = $("#wordtable > tbody").children('tr:first');
         $(gotoit).find('td').children().on('input', function (el) {
             if ($("#pphTableS").hasClass("changed") == false)
                 $("#pphTableS").addClass("changed");
@@ -1576,7 +1580,7 @@ window.addEventListener('load', function (evt) {
     });
 
     $("#importJustTrack").click(function (ev) {
-        alertStr = "You have requested that your task data be restored from a file backup. Any task data stored currently by the tracker will be overwritten. If this is what you want to do, press OK and you will be given a file dialog where you will select the backup file to restore from. If you got here by accident, press cancel. Proceed wisely! "
+        let alertStr = "You have requested that your task data be restored from a file backup. Any task data stored currently by the tracker will be overwritten. If this is what you want to do, press OK and you will be given a file dialog where you will select the backup file to restore from. If you got here by accident, press cancel. Proceed wisely! "
         if (confirm(alertStr)) {
             SendSafeRuntimeMessage({ request: "GETACTIVET" }, function (response) {
                 if (response != "") {
@@ -1585,17 +1589,16 @@ window.addEventListener('load', function (evt) {
                     return;
                 }
 
-                fileSelector = document.createElement('input');
+                let fileSelector = document.createElement('input');
                 fileSelector.setAttribute('type', 'file');
-                selectDialogueLink = document.createElement('a');
+                let selectDialogueLink = document.createElement('a');
                 selectDialogueLink.setAttribute('href', '');
                 selectDialogueLink.innerText = "Select File";
                 $(fileSelector).change("change", function () {
                     if (fileSelector.files.length == 1) {
-                        reader = new FileReader();
-                        data;
-                        reader.onload = function (data) {
-                            data = reader.result;
+                        let reader = new FileReader();
+                        reader.onload = function () {
+                            let data = reader.result;
                             processFile(reader.result);
                         };
                         reader.readAsText(fileSelector.files[0]);
@@ -1609,19 +1612,18 @@ window.addEventListener('load', function (evt) {
 
     $("#importAll").click(function (ev) {
         window.scrollTo(0, 0);
-        alertStr = "You have requested that all of your MDE data be restored from a file backup. Any task data or MDE options currently set will be overwritten. If this is what you want to do, press OK and you will be given a file dialog where you will select the backup file to restore from. If you got here by accident, press cancel. There is no going back from this, Proceed wisely! "
+        let alertStr = "You have requested that all of your MDE data be restored from a file backup. Any task data or MDE options currently set will be overwritten. If this is what you want to do, press OK and you will be given a file dialog where you will select the backup file to restore from. If you got here by accident, press cancel. There is no going back from this, Proceed wisely! "
         if (confirm(alertStr)) {
-            fileSelector = document.createElement('input');
+            let fileSelector = document.createElement('input');
             fileSelector.setAttribute('type', 'file');
-            selectDialogueLink = document.createElement('a');
+            let selectDialogueLink = document.createElement('a');
             selectDialogueLink.setAttribute('href', '');
             selectDialogueLink.innerText = "Select File";
             $(fileSelector).change("change", function () {
                 if (fileSelector.files.length == 1) {
-                    reader = new FileReader();
-                    data;
-                    reader.onload = function (data) {
-                        data = reader.result;
+                    let reader = new FileReader();
+                    reader.onload = function () {
+                        let data = reader.result;
                         s_processImportAll(reader.result);
                     };
                     reader.readAsText(fileSelector.files[0]);
@@ -2076,7 +2078,7 @@ let inProcessFilterStr = "InProcess";
  * @returns {*}
  */
 function getFilterConstant(filterVal) {
-    filterConstant = filterVal;
+    let filterConstant = filterVal;
     if (filterVal == 'r')
         filterConstant = getReleasedConstant();
     else if (filterVal == "nc")
@@ -2131,11 +2133,11 @@ function buildTable(data, zone, invoice, filter) {
     let monthTotaltrueaet = 0;
 
     let aetrange = $('input[name="aetrange"]:checked').val();
-    international = $("#iInvoice").is(":checked");
+    let international = $("#iInvoice").is(":checked");
 
     let noTotal = false;
 
-    d = new Date();
+    let d = new Date();
 
     let periodIndex = 0; //default period is current
     // get period index if invoicing
@@ -2341,7 +2343,7 @@ function buildTable(data, zone, invoice, filter) {
     else {
         //process last date
         //add to week, period total if applicable
-        cDate = new Date(lastDate);
+        let cDate = new Date(lastDate);
         current = false;
         if (cDate >= periodArray[periodIndex].startDate) {
             periodTotal = periodTotal + totalTime;
@@ -2350,12 +2352,9 @@ function buildTable(data, zone, invoice, filter) {
         if (cDate >= week.startDate)
             week.total = week.total + totalTime;
         if (invoice == false) {
-            trt = processTotalLine(totalAET, totalTime, lastDate, totalTaskCount, current, false, totaltrueaet);
-            $("#trackerTable").find('tbody').append(trt);
-        }
-        else if (noTotal == false) {
+            let trt = processTotalLine(totalAET, totalTime, lastDate, totalTaskCount, current, false, totaltrueaet);
             if (justDate4Compare(cDate) >= perioda.startDate && justDate4Compare(cDate) <= perioda.endDate) {
-                trt = processTotalLine(totalAET, totalTime, lastDate, totalTaskCount, current, false, totaltrueaet);
+                let trt = processTotalLine(totalAET, totalTime, lastDate, totalTaskCount, current, false, totaltrueaet);
                 $("#trackerTable").find('tbody').append(trt);
             }
         }
@@ -2392,13 +2391,13 @@ function buildTable(data, zone, invoice, filter) {
             if (international) {
                 tempd = new Date(periodArray[periodIndex].emonth);
                 tempStr = tempd.justshortDate();
-                trt = processTotalLine(monthTotala, monthTotalw, "Month Ending " + tempStr, monthTotalr, false, true, monthTotaltrueaet);
+                let trt = processTotalLine(monthTotala, monthTotalw, "Month Ending " + tempStr, monthTotalr, false, true, monthTotaltrueaet);
                 $("#trackerTable").find('tbody').append(trt);
 
             } else {
                 tempd = new Date(periodArray[periodIndex].startDate.addDays(6));
                 tempStr = tempd.justshortDate();
-                trt = processTotalLine(week1Totala, week1Totalw, "Week Ending " + tempStr, week1Totalr, false, true, week1Totaltrueaet);
+                let trt = processTotalLine(week1Totala, week1Totalw, "Week Ending " + tempStr, week1Totalr, false, true, week1Totaltrueaet);
                 $("#trackerTable").find('tbody').append(trt);
                 trt = processTotalLine(week2Totala, week2Totalw, "Week Ending " + periodArray[periodIndex].endDate.justshortDate(), week2Totalr, false, true, week2Totaltrueaet);
                 $("#trackerTable").find('tbody').append(trt);
@@ -2411,7 +2410,7 @@ function buildTable(data, zone, invoice, filter) {
         //    periodArray[periodIndex].desc + " (" + millisToHoursMinutesAndSeconds(periodTotal) + ")</b>";
         //setTrackTotals(tty, "green");
         if (invoice == false) {
-            overallT = {
+            let overallT = {
                 week1aetdesc: "", week1aet: "", week1time: "",
                 week2aetdesc: "", week2aet: "", week2time: "",
                 overallaet: "", overalltime: "", week1trueaet: "", week2trueaet: "", overalltrueaet: "",
@@ -2456,7 +2455,7 @@ function buildTable(data, zone, invoice, filter) {
 function processdetrecAET(taskAET) {
     let newAET = taskAET;
     if (taskAET.indexOf(" - ") != -1) {
-        aetrange = $('input[name="aetrange"]:checked').val();
+        let aetrange = $('input[name="aetrange"]:checked').val();
         let newTime = taskAET.split(" - ");
         if (aetrange == "HIGH")
             newAET = newTime[1];
@@ -2533,7 +2532,7 @@ function processTotalLine(totalAET, totalTime, lastDate, totalTaskCount, current
     let aetStr = millisToHoursMinutesAndSeconds(totalAET * 60000); //adjusted aet
     let trueaetstr = millisToHoursMinutesAndSeconds(totaltrueaet * 60000); //unadjusted/real aet
 
-    diff = (totalAET * 60000) - totalTime;
+    let diff = (totalAET * 60000) - totalTime;
     let diffStr = millisToMinutesAndSeconds(diff);
     //let suggestStr = "";
     let diffClass = 'greennogrey';
@@ -2552,14 +2551,14 @@ function processTotalLine(totalAET, totalTime, lastDate, totalTaskCount, current
     let workClass = (current == true ? "greentitle" : "dateWork");
     //'<input id="work" name="work" type="hidden" value="' + totalTime + '">';
     //date taskcount aet work surplus productivity
-    rowClass = "blueTitle";
+    let rowClass = "blueTitle";
     if (totalLine) {
         rowClass = "totalline";
         workClass = "totalline";
         //    suggestStr = "(3% is " + millisToHoursMinutesAndSeconds(totalTime * .03) + ")";
     }
 
-    trt = '<tr title="Click on a row to view detail. Click again to collapse detail." class="' +
+    let trt = '<tr title="Click on a row to view detail. Click again to collapse detail." class="' +
         rowClass + '"><td id="date" class="' + workClass + '">' + lastDate + '</td><td>' + totalTaskCount + '</td><td id="curaetstr" class="aethover">' + aetStr + '<input id="trueaetstr" type="hidden" value="' + trueaetstr + '">' +
         '</td><td class="' + workClass + '">' + '<input id="work" name="work" type="hidden" value="' + totalTime + '">'
         + millisToHoursMinutesAndSeconds(totalTime) + '</td><td id="surplus" class="' + diffClass + '" align="right">' + diffStr + '</td><td>' +
@@ -2576,13 +2575,13 @@ function processTotalLine(totalAET, totalTime, lastDate, totalTaskCount, current
  */
 function detLine(ev) {
     let curRow = ev.target.parentElement; // set to current tr
-    d = $(curRow).find('td#date').text();
-    aetrange = $('input[name="aetrange"]:checked').val();
+    let d = $(curRow).find('td#date').text();
+    let aetrange = $('input[name="aetrange"]:checked').val();
     let surplus = "00:00";
 
-    curDate = new Date(d);
+    let curDate = new Date(d);
     //if we already have detRecs in the table - we are just closing this series of details
-    x = $(curRow).find(".detrec");
+    let x = $(curRow).find(".detrec");
     let dets = $(".detRec");
     if (dets.length > 0) {
         $("#detdesc").text("Productivity %");
@@ -2595,12 +2594,13 @@ function detLine(ev) {
             $(".detRec").remove();
     }
 
-    filterConstant = $("#filterDetail option:selected").val();
+    let filterConstant = $("#filterDetail option:selected").val();
     if (filterConstant == "none")
         filterConstant = null;
     filterConstant = getFilterConstant(filterConstant);
 
     chrome.storage.local.get('trackData', function (data) { //ok
+        let dataA;
         try {
             dataA = JSON.parse(data.trackData);
         } catch (e) {
@@ -2611,11 +2611,11 @@ function detLine(ev) {
             return;
         }
 
-        objRecs = localSort(dataA, "dateofTask", s_timezone);
+        let objRecs = localSort(dataA, "dateofTask", s_timezone);
 
         //only get this day and matching filterconstant if there is one 
         let detObjs = objRecs.filter(function (obj) {
-            thisDate = new Date(obj.dateofTask);
+            let thisDate = new Date(obj.dateofTask);
             if (filterConstant != null) {
                 if (filterConstant == inProcessFilterStr) {
                     if (obj.workTime == 0 && obj.taskDesc != getSubmittedConstant())
@@ -2640,15 +2640,16 @@ function detLine(ev) {
         }
 
         for (let i = 0; i < detObjs.length; i++) {
-            objRec = detObjs[i];
-            workClass = "greentdnogrey";
+            let objRec = detObjs[i];
+            let workClass = "greentdnogrey";
+            let rowClass = "detRec";
+            let surplus;
             if (objRec.taskAET == "")
                 objRec.taskAET = "0.0";
             let aettime = processdetrecAET(objRec.taskAET); //input is string, output is mils
             let displayAET = convertAET(objRec.taskAET, aetrange); //in and out are string
             let displaytrueAET = convertAET(objRec.taskAET, aetrange); //in and out are string
             let tempWork = millisToMinutesAndSeconds(objRec.workTime);
-            rowClass = "detRec";
 
 
             if (objRec.taskDesc == getReleasedConstant()) {
@@ -2683,7 +2684,7 @@ function detLine(ev) {
                 displayId = displayId.substr(0, 10);
             }
 
-            newStr = '<tr class="' + rowClass + '"><td id="datestr">' + objRec.dateofTask +
+            let newStr = '<tr class="' + rowClass + '"><td id="datestr">' + objRec.dateofTask +
                 '</td><td class="task">' + displayId + addStar +
                 '<input id="realtaskId" name="realtaskId" type="hidden" value="' + objRec.taskId + '">' +
                 '</td>' + '<td id="taskAET" class="taskaetclass">' + displayAET + '<input id="tasktrueaet" type="hidden" value="' + displaytrueAET + '"></td>' +
@@ -2770,8 +2771,8 @@ function eraseData(before) {
 function loadTrackTestData() {
     //chrome.storage.local.remove('trackData', function (data) { });
 
-    data = { taskId: "", dateofTask: null, taskDesc: "", taskAET: "", extras: "", workTime: 0 };
-    d = new Date();
+    let data = { taskId: "", dateofTask: null, taskDesc: "", taskAET: "", extras: "", workTime: 0 };
+    let d = new Date();
     let dataArray = [];
     for (let i = 0; i < 30; i++) {
         let baseTask = 7269087651 + (i * 30);
@@ -2913,8 +2914,8 @@ function updateRec2Day(dataArray, taskRec, tempObj) {
         working = working.substring(0, working.length - 13);
         working = working + millisToHoursMinutesAndSeconds(total.work) + '</td>';
         ptd.innerHTML = working;
-        surplus = $(cur).find('td#surplus');
-        diff = (total.raet * 60000) - total.work;
+        let surplus = $(cur).find('td#surplus');
+        let diff = (total.raet * 60000) - total.work;
         surplus[0].className = 'greennogrey';
         let ss = millisToMinutesAndSeconds(diff);
         if (diff < 0) {
@@ -2940,16 +2941,16 @@ function updateRec2Day(dataArray, taskRec, tempObj) {
  */
 function updatefromtd(taskIdin, mrkSub, newTimein, mrkRel, taskRec) {
     let taskId = taskIdin;
-    newTime = newTimein;
+    let newTime = newTimein;
     let newMrkSub = mrkSub;
     let newMrkRel = mrkRel;
 
     getData(function (dataA) {
-        dataArray = [];
-        start = new Date();
+        let dataArray = [];
+        let start = new Date();
+        let workClass = "greenwork";
         if (dataA != null) {
             dataArray = mergeData(dataA);
-            workClass = "greenwork";
             let tempObj = dataArray.find(function (element) {
                 return element.taskId == taskId;
                 //return findTaskInTaskStr(taskId, element.taskId);
@@ -2970,8 +2971,7 @@ function updatefromtd(taskIdin, mrkSub, newTimein, mrkRel, taskRec) {
                     $(taskRec).removeClass("releasedC");
                     $(taskRec).removeClass("incompleteC");
                     $(taskRec).addClass("releasedC");
-                    aettd = $(taskRec).find('td#taskAET');
-                    let str = millisToMinutesAndSeconds(tempObj.workTime);
+                    let aettd = $(taskRec).find('td#taskAET');
                     $(aettd).text(str);
                     updateRec2Day(dataArray, taskRec, tempObj);
                     start = new Date(tempObj.dateofTask);
@@ -2982,14 +2982,14 @@ function updatefromtd(taskIdin, mrkSub, newTimein, mrkRel, taskRec) {
                     if (tempObj.taskDesc == getReleasedConstant()) {
                         let strWorktime = $(taskRec).find('td#workTime');
                         let ttime = $(strWorktime).text();
-                        strWorktime = $(taskRec).find('td#taskAET');
-                        $(strWorktime).text(ttime);
+                        let strWorktimeAET = $(taskRec).find('td#taskAET');
+                        $(strWorktimeAET).text(ttime);
                     }
                     // do I need to change the color?
                     //update surplus on taskRec
-                    aettime = processAETnFloat(tempObj.taskAET, $('input[name="aetrange"]:checked').val());
-                    surplus = $(taskRec).find('td#surplus');
-                    diff = aettime - tempObj.workTime;
+                    let aettime = processAETnFloat(tempObj.taskAET, $('input[name="aetrange"]:checked').val());
+                    let surplus = $(taskRec).find('td#surplus');
+                    let diff = aettime - tempObj.workTime;
                     $(surplus).text(millisToMinutesAndSeconds(diff));
                     updateRec2Day(dataArray, taskRec, tempObj);
                     start = new Date(tempObj.dateofTask);
@@ -3137,7 +3137,7 @@ function dataclick(ev) {
     //if this isn't a detrec - just return - clicking in this field should expand for title rows.
 
     removeEditButtons();
-    tStr = $("#status").text();
+    let tStr = $("#status").text();
     if (tStr.indexOf("No Active task") == -1) {
         setTrackMsg("Unable to modify data when there is an active task.", "red");
         removeEditButtons();
@@ -3175,9 +3175,13 @@ function dataclick(ev) {
 
         $(".save").click(function (ev) {
             //check to see if thy selected something from the drop down first
-            statusChange = $("#newStatus option:selected").val();
+            let statusChange = $("#newStatus option:selected").val();
             let pTask = null;
-            task = null;
+            let task = null;
+            let taskId;
+            let newTime;
+            let newVal;
+            let workId;
             if (statusChange == "none") {
             }
             else {
@@ -3479,7 +3483,7 @@ function buildConsolidated(dataA, periodArray) {
     });
     //process that last date we were working with
     if (totalCRec.date != "") {
-        cDate = new Date(totalCRec.date);
+        let cDate = new Date(totalCRec.date);
         if (cDate >= period.startDate && cDate <= period.endDate) {
             current = false;
             if (cDate >= period.startDate) {
@@ -3487,7 +3491,7 @@ function buildConsolidated(dataA, periodArray) {
             }
             if (totalCRec.workMils > 0) {
                 //we have a new date to look at - so write rec for the one we were working with
-                trt = buildTotalCLine(totalCRec.aetMils, totalCRec.workMils, totalCRec.deviceCount, totalCRec.date, current);
+                let trt = buildTotalCLine(totalCRec.aetMils, totalCRec.workMils, totalCRec.deviceCount, totalCRec.date, current);
                 table.find('tbody').append(trt);
                 overallT += totalCRec.workMils;
             }
@@ -3503,7 +3507,7 @@ function buildConsolidated(dataA, periodArray) {
     }
     //go thru trs and if there is more than one record, change color to purple and add click handler for that row
     //let trs = $(".tableClass").find("tbody tr");
-    trs = $(table).find("tbody tr");
+    let trs = $(table).find("tbody tr");
     $(trs).each(function (tr) {
         // is there more than one - 
         let count = parseInt(this.children[1].textContent);
@@ -3627,8 +3631,7 @@ function processConslidateDetail(el) {
                         workClass = "redtdnogrey";
                         surplus = '(' + surplus + ')';
                     }
-                    rowClass = "detRec";
-                    let platformDesc = '</td><td class="' + workClass + '">';
+                    let rowClass = "detRec";
                     let platformNumDet = '<input id="platformNum" name="platformNum" type="hidden" value="' + thisComputer.number + '">';
                     let platformDescDet = '<input id="platformDesc" name="platformDesc" type="hidden" value="' + thisComputer.desc + '">';
                     //only if this is my computer, can I edit this.. todo - add handler/save button 
@@ -4235,10 +4238,10 @@ let commandNames = [
     { name: "LOADSND", func: loadsound },// turn monitor on/off
     { name: "TOGGLERHTEST", func: toggleRHTest },// turn RH test on/off
     { name: "SENDTEXTMSG", func: sendTextTest }, //send a text message
-    { name: "SENDNOTIFICATION", func: sendNotifyTest }// send a notification
-    // send a text message
-
-    // modify one record
+    { name: "SENDNOTIFICATION", func: sendNotifyTest },// send a notification
+    { name: "BROWSEDATA", func: browseData },      // browse & edit all records
+    { name: "GENDATA", func: genTestData },         // generate configurable test dataset
+    { name: "CLEARDATA", func: clearTrackData }    // wipe all tracker records
 ];
 
 //if command is for a task record, need a new area to enter the dataobj to send  
@@ -4646,7 +4649,18 @@ function processCommand(valCommand) {
             '<input class="testParm" type="text" id="testTaskId" name="testTaskId" size = "10" value = ""/><button id="retreiveRec" class="rightAlign">Get Record</button>');
         $('#retreiveRec').click(modifyRec);
         $("#parmArea").show();
+    }
 
+    if (valCommand == "BROWSEDATA") {
+        browseData();
+    }
+
+    if (valCommand == "GENDATA") {
+        genTestData();
+    }
+
+    if (valCommand == "CLEARDATA") {
+        clearTrackData();
     }
 }
 /**
@@ -4688,6 +4702,232 @@ function validDataObj(testdataobj) {
         return true;
 
     return false;
+}
+
+/**
+ * Apply an edit to a specific field of a task record.
+ * @returns {*}
+ */
+
+/**
+ * Show all tracker records in a scrollable table; click any row to edit it inline.
+ */
+function browseData() {
+    getData(function (dataA) {
+        if (dataA == null || dataA.length === 0) {
+            $("#testmsgarea").text("No tracker data found.");
+            return;
+        }
+        let dataArray = mergeData(dataA);
+        // Sort newest-first for convenience
+        dataArray.sort(function (a, b) { return new Date(b.dateofTask) - new Date(a.dateofTask); });
+
+        let html =
+            '<div class="testParm" style="max-height:260px;overflow-y:auto;margin-bottom:6px;">' +
+            '<table style="width:100%;font-size:11px;border-collapse:collapse;" id="browseTable">' +
+            '<thead><tr style="position:sticky;top:0;background:#ddd;">' +
+            '<th style="padding:2px 4px;">Date</th>' +
+            '<th style="padding:2px 4px;">Task&nbsp;ID</th>' +
+            '<th style="padding:2px 4px;">AET</th>' +
+            '<th style="padding:2px 4px;">Work(ms)</th>' +
+            '<th style="padding:2px 4px;">Status</th>' +
+            '</tr></thead><tbody id="browseBody"></tbody></table></div>' +
+            '<div id="browseEditArea" class="testParm" style="display:none;border-top:1px solid #aaa;padding-top:6px;">' +
+            '<b>Edit Record</b><br>' +
+            '<label class="testareaLabel">Date</label>' +
+            '<input type="text" id="beDate" size="22"/><br>' +
+            '<label class="testareaLabel">Task&nbsp;ID</label>' +
+            '<input type="text" id="beTaskId" size="16"/><br>' +
+            '<label class="testareaLabel">AET</label>' +
+            '<input type="text" id="beAET" size="6"/>' +
+            '<label class="testareaLabel" style="margin-left:8px;">Work&nbsp;(ms)</label>' +
+            '<input type="number" id="beWork" size="10"/><br>' +
+            '<label class="testareaLabel">Status</label>' +
+            '<select id="beDesc">' +
+            '<option value="">Blank</option>' +
+            '<option value="Submitted">Submitted</option>' +
+            '<option value="Released">Released</option>' +
+            '<option value="Not Complete">Not Complete</option>' +
+            '</select><br>' +
+            '<label class="testareaLabel">Extras</label>' +
+            '<input type="text" id="beExtras" size="22"/><br>' +
+            '<button id="beSave" style="margin-top:4px;">Save</button>' +
+            '<button id="beDelete" style="margin-top:4px;margin-left:6px;color:red;">Delete</button>' +
+            '<button id="beCancel" style="margin-top:4px;margin-left:6px;">Cancel</button>' +
+            '</div>';
+
+        $(".testParm").remove();
+        $("#parmArea").html(html);
+        $("#parmArea").show();
+        $("#testmsgarea").text(dataArray.length + " records. Click a row to edit.");
+
+        // Populate table rows
+        let tbody = $("#browseBody");
+        dataArray.forEach(function (rec, idx) {
+            let statusLabel = rec.taskDesc || "(blank)";
+            let tr =
+                '<tr data-idx="' + idx + '" style="cursor:pointer;border-bottom:1px solid #eee;" ' +
+                'class="browseRow">' +
+                '<td style="padding:2px 4px;">' + (rec.dateofTask || "") + '</td>' +
+                '<td style="padding:2px 4px;">' + (rec.taskId || "") + '</td>' +
+                '<td style="padding:2px 4px;">' + (rec.taskAET || "") + '</td>' +
+                '<td style="padding:2px 4px;">' + (rec.workTime || 0) + '</td>' +
+                '<td style="padding:2px 4px;">' + statusLabel + '</td>' +
+                '</tr>';
+            tbody.append(tr);
+        });
+
+        // Row click → populate edit form
+        $(document).off("click.browse").on("click.browse", ".browseRow", function () {
+            let idx = parseInt($(this).data("idx"));
+            let rec = dataArray[idx];
+            $("#browseEditArea").show();
+            $("#beDate").val(rec.dateofTask || "");
+            $("#beTaskId").val(rec.taskId || "");
+            $("#beAET").val(rec.taskAET || "");
+            $("#beWork").val(rec.workTime || 0);
+            $("#beDesc").val(rec.taskDesc || "");
+            $("#beExtras").val(rec.extras || "");
+            $("#beSave").off("click").on("click", function () {
+                rec.dateofTask = $("#beDate").val();
+                rec.taskId = $("#beTaskId").val();
+                rec.taskAET = $("#beAET").val();
+                rec.workTime = parseInt($("#beWork").val()) || 0;
+                rec.taskDesc = $("#beDesc").val();
+                rec.extras = $("#beExtras").val();
+                let dday = new Date(rec.dateofTask);
+                saveData(dataArray, dday);
+                $("#browseEditArea").hide();
+                // Refresh that row in the table
+                let cells = $(".browseRow[data-idx='" + idx + "'] td");
+                cells.eq(0).text(rec.dateofTask || "");
+                cells.eq(1).text(rec.taskId || "");
+                cells.eq(2).text(rec.taskAET || "");
+                cells.eq(3).text(rec.workTime || 0);
+                cells.eq(4).text(rec.taskDesc || "(blank)");
+                $("#testmsgarea").text("Record saved.");
+            });
+            $("#beDelete").off("click").on("click", function () {
+                if (!confirm("Delete this record?")) return;
+                dataArray.splice(idx, 1);
+                let dday = new Date();
+                saveData(dataArray, dday);
+                $(".browseRow[data-idx='" + idx + "']").remove();
+                $("#browseEditArea").hide();
+                $("#testmsgarea").text("Record deleted. " + dataArray.length + " records remain.");
+            });
+            $("#beCancel").off("click").on("click", function () {
+                $("#browseEditArea").hide();
+            });
+        });
+    });
+}
+
+/**
+ * Render configurable controls to generate a synthetic test dataset and write it to storage.
+ */
+function genTestData() {
+    let html =
+        '<b class="testParm">Generate Test Dataset</b><br class="testParm">' +
+        '<label class="testParm testareaLabel">Records</label>' +
+        '<input class="testParm" type="number" id="genCount" value="30" min="1" max="500" style="width:60px;"/><br>' +
+        '<label class="testParm testareaLabel">Days&nbsp;back&nbsp;(start)</label>' +
+        '<input class="testParm" type="number" id="genDaysBack" value="60" min="1" max="730" style="width:60px;"/><br>' +
+        '<label class="testParm testareaLabel">AET&nbsp;min</label>' +
+        '<input class="testParm" type="number" id="genAETMin" value="2.0" min="0.1" max="24" step="0.1" style="width:55px;"/>' +
+        '<label class="testParm testareaLabel" style="margin-left:6px;">AET&nbsp;max</label>' +
+        '<input class="testParm" type="number" id="genAETMax" value="8.0" min="0.1" max="24" step="0.1" style="width:55px;"/><br>' +
+        '<label class="testParm testareaLabel">Work&nbsp;%&nbsp;of&nbsp;AET</label>' +
+        '<input class="testParm" type="number" id="genWorkPct" value="85" min="0" max="200" style="width:55px;"/><br>' +
+        '<label class="testParm testareaLabel">Statuses</label>' +
+        '<span class="testParm" style="font-size:11px;">' +
+        '<input type="checkbox" id="genStatBlank" checked/> Blank&nbsp;' +
+        '<input type="checkbox" id="genStatSub" checked/> Submitted&nbsp;' +
+        '<input type="checkbox" id="genStatRel" checked/> Released&nbsp;' +
+        '<input type="checkbox" id="genStatNC"/> Not&nbsp;Complete' +
+        '</span><br>' +
+        '<label class="testParm testareaLabel">Tasks/day&nbsp;(avg)</label>' +
+        '<input class="testParm" type="number" id="genPerDay" value="3" min="1" max="20" style="width:55px;"/><br>' +
+        '<button class="testParm" id="genBuild" style="margin-top:4px;">Build &amp; Save</button>';
+
+    $(".testParm").remove();
+    $("#parmArea").html(html);
+    $("#parmArea").show();
+    $("#testmsgarea").text("Configure and click Build & Save.");
+
+    $("#genBuild").off("click").on("click", function () {
+        let count = parseInt($("#genCount").val()) || 30;
+        let daysBack = parseInt($("#genDaysBack").val()) || 60;
+        let aetMin = parseFloat($("#genAETMin").val()) || 2.0;
+        let aetMax = parseFloat($("#genAETMax").val()) || 8.0;
+        let workPct = parseInt($("#genWorkPct").val()) / 100 || 0.85;
+        let perDay = parseInt($("#genPerDay").val()) || 3;
+        if (aetMax < aetMin) aetMax = aetMin;
+
+        let statuses = [];
+        if ($("#genStatBlank").is(":checked")) statuses.push("");
+        if ($("#genStatSub").is(":checked"))   statuses.push("Submitted");
+        if ($("#genStatRel").is(":checked"))   statuses.push("Released");
+        if ($("#genStatNC").is(":checked"))    statuses.push("Not Complete");
+        if (statuses.length === 0) statuses = [""];
+
+        let dataArray = [];
+        let d = new Date();
+        let baseId = 7269000000 + Math.floor(Math.random() * 100000);
+        let totalDays = daysBack;
+        let generated = 0;
+
+        for (let dayOffset = totalDays; dayOffset >= 0 && generated < count; dayOffset--) {
+            let dayDate = new Date(d);
+            dayDate.setDate(d.getDate() - dayOffset);
+            // Vary tasks per day slightly around perDay
+            let tasksThisDay = Math.max(1, perDay + Math.floor(Math.random() * 3) - 1);
+            for (let t = 0; t < tasksThisDay && generated < count; t++) {
+                let taskDate = new Date(dayDate);
+                taskDate.setHours(7 + Math.floor(Math.random() * 10));
+                taskDate.setMinutes(Math.floor(Math.random() * 60));
+                taskDate.setSeconds(Math.floor(Math.random() * 60));
+                let dstr = (taskDate.getMonth() + 1) + '/' + taskDate.getDate() + '/' +
+                    taskDate.getFullYear() + ' ' + taskDate.toLocaleTimeString();
+                let aet = (aetMin + Math.random() * (aetMax - aetMin)).toFixed(1);
+                let workMs = Math.round(parseFloat(aet) * 60000 * workPct * (0.9 + Math.random() * 0.2));
+                let status = statuses[Math.floor(Math.random() * statuses.length)];
+                let taskId = (baseId + generated * 37).toString();
+                dataArray.push({
+                    taskId: taskId,
+                    dateofTask: dstr,
+                    taskDesc: status,
+                    taskAET: aet,
+                    extras: "GenTest-" + generated,
+                    workTime: workMs
+                });
+                generated++;
+            }
+        }
+
+        SendSafeRuntimeMessage({ text: "SAVEDATAA", data: dataArray, datein: null });
+        $("#testmsgarea").text(generated + " records generated and saved.");
+    });
+}
+
+/**
+ * Wipe all task tracker records from storage after confirmation.
+ */
+function clearTrackData() {
+    $(".testParm").remove();
+    $("#parmArea").html(
+        '<p class="testParm" style="color:red;font-weight:bold;">This will delete ALL tracker records.</p>' +
+        '<button class="testParm" id="clearConfirm">Yes, delete everything</button>'
+    );
+    $("#parmArea").show();
+    $("#testmsgarea").text("Confirm deletion below.");
+
+    $("#clearConfirm").off("click").on("click", function () {
+        SendSafeRuntimeMessage({ text: "SAVEDATAA", data: [], datein: null });
+        $("#testmsgarea").text("Tracker data cleared.");
+        $("#parmArea").hide();
+        $(".testParm").remove();
+    });
 }
 
 /**
@@ -4737,7 +4977,7 @@ function modifyRec() {
                 $("#testDesc").val(tempObj.taskDesc);
                 $("#testExtras").val(tempObj.extras);
                 //add click handler for save data
-                $('testsaverec').click(function () {
+                $('#testsaverec').click(function () {
                     //get data from the screen
                     tempObj.dateofTask = $("#testDate").val();
                     tempObj.taskAET = $("#testAET").val();
