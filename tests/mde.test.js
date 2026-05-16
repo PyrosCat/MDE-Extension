@@ -968,16 +968,17 @@ test('SPECanyIncomplete: other NC task still detected', () => {
 });
 
 // setURL
-test('setURL: always uses USRoot regardless of international flag (current impl)', () => {
-    // The function has: prefix = USRoot twice (international branch is dead code currently)
-    const us   = setURL('/path', false);
-    const intl = setURL('/path', true);
-    assertEqual(us, intl); // both use USRoot due to unconditional reassignment
-    assert(us.includes('raterlabs.appen.com'), 'should use US root: ' + us);
+test('setURL: uses USRoot when international=false', () => {
+    const result = setURL('/path', false);
+    assert(result.startsWith('https://raterlabs.appen.com'), 'should use US root: ' + result);
 });
-test('setURL: appends suffix correctly', () => {
-    const result = setURL('/rater/task', false);
-    assert(result.endsWith('/rater/task'), 'suffix appended: ' + result);
+test('setURL: uses IntlRoot when international=true', () => {
+    const result = setURL('/path', true);
+    assert(result.startsWith('https://connect.appen.com'), 'should use intl root: ' + result);
+});
+test('setURL: appends suffix correctly for both locales', () => {
+    assertEqual(setURL('/rater/task', false), 'https://raterlabs.appen.com/rater/task');
+    assertEqual(setURL('/rater/task', true),  'https://connect.appen.com/rater/task');
 });
 
 // buildperiod
@@ -1013,6 +1014,198 @@ test('buildperiod: international returns more entries', () => {
     const result = buildperiod(new Date('2024-06-15'), 'I');
     assert(result.length >= 2, 'international should have periods: ' + result.length);
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// utils.js — previously untested pure functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+console.log('\nutils.js (pure additions)');
+
+// isAlphaNumeric
+test('isAlphaNumeric: digit is alphanumeric', () => assert(isAlphaNumeric('5')));
+test('isAlphaNumeric: uppercase letter is alphanumeric', () => assert(isAlphaNumeric('Z')));
+test('isAlphaNumeric: lowercase letter is alphanumeric', () => assert(isAlphaNumeric('a')));
+test('isAlphaNumeric: space is not alphanumeric', () => assert(!isAlphaNumeric(' ')));
+test('isAlphaNumeric: hyphen is not alphanumeric', () => assert(!isAlphaNumeric('-')));
+test('isAlphaNumeric: only checks first char', () => assert(isAlphaNumeric('a!')));
+
+// msgStrGet
+test('msgStrGet: returns matching string', () => {
+    const strs = [{ type: 'FOO', str: 'hello' }, { type: 'BAR', str: 'world' }];
+    assertEqual(msgStrGet('FOO', strs), 'hello');
+    assertEqual(msgStrGet('BAR', strs), 'world');
+});
+test('msgStrGet: returns "Not Found" for missing type', () => {
+    assertEqual(msgStrGet('MISSING', [{ type: 'FOO', str: 'x' }]), 'Not Found');
+});
+test('msgStrGet: empty array returns "Not Found"', () => {
+    assertEqual(msgStrGet('X', []), 'Not Found');
+});
+
+// GetLogStatus / setLogStatus — getter/setter pair
+test('GetLogStatus / setLogStatus: round-trips correctly', () => {
+    const before = GetLogStatus();
+    setLogStatus(true);
+    assertEqual(GetLogStatus(), true);
+    setLogStatus(false);
+    assertEqual(GetLogStatus(), false);
+    setLogStatus(before); // restore
+});
+
+// resetAlert4Context — sets alertOnce = true (file-level var in utils.js)
+test('resetAlert4Context: does not throw', () => {
+    resetAlert4Context();
+    assert(true);
+});
+
+// NRTLogCleanup
+test('NRTLogCleanup: returns array unchanged when all records are recent', () => {
+    const now = Date.now();
+    const recs = [
+        { dateMills: now - 86400000 },      // 1 day ago
+        { dateMills: now - 7 * 86400000 },  // 7 days ago
+    ];
+    const result = NRTLogCleanup(recs);
+    assertEqual(result.length, 2);
+});
+test('NRTLogCleanup: removes records older than 31 days', () => {
+    const now = Date.now();
+    const recs = [
+        { dateMills: now - 86400000 },           // 1 day ago — keep
+        { dateMills: now - 32 * 86400000 },      // 32 days ago — prune
+        { dateMills: now - 365 * 86400000 },     // 1 year ago — prune
+    ];
+    const result = NRTLogCleanup(recs);
+    assertEqual(result.length, 1);
+});
+test('NRTLogCleanup: always returns array (no undefined when nothing pruned)', () => {
+    // This was the bug: returned undefined when length was unchanged
+    const now = Date.now();
+    const recs = [{ dateMills: now }];
+    const result = NRTLogCleanup(recs);
+    assert(Array.isArray(result), 'should return array, got: ' + typeof result);
+    assert(result.length === 1);
+    result.push({ dateMills: now }); // would throw if result were undefined
+    assert(true);
+});
+test('NRTLogCleanup: empty array returns empty array', () => {
+    const result = NRTLogCleanup([]);
+    assert(Array.isArray(result));
+    assertEqual(result.length, 0);
+});
+
+// updateSpellA
+test('updateSpellA: adds new entry when not present', () => {
+    const arr = [{ old: 'teh', new: 'the' }];
+    const result = updateSpellA(arr, { old: 'adn', new: 'and' });
+    assertEqual(result.length, 2);
+    assertEqual(result[1].new, 'and');
+});
+test('updateSpellA: updates existing entry', () => {
+    const arr = [{ old: 'teh', new: 'the' }, { old: 'adn', new: 'and' }];
+    const result = updateSpellA(arr, { old: 'teh', new: 'THE' });
+    assertEqual(result.length, 2);
+    assertEqual(result[0].new, 'THE');
+});
+test('updateSpellA: empty array — adds entry', () => {
+    const result = updateSpellA([], { old: 'teh', new: 'the' });
+    assertEqual(result.length, 1);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// dates.js — previously untested pure functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+console.log('\ndates.js (pure additions)');
+
+// convert2Pacific — converts a local Date to Pacific time
+// We can't know the test runner's timezone offset reliably, but we can verify:
+// (a) it returns a Date object when TDATE requested
+// (b) the result is a string in M/D/YYYY HH:MM:SS format otherwise
+// (c) round-tripping from Pacific runner is identity
+test('convert2Pacific: TDATE returns a Date object', () => {
+    const d = new Date('2025-06-15T14:00:00Z');
+    const result = convert2Pacific(d, 'TDATE');
+    assert(result instanceof Date, 'should return Date, got: ' + typeof result);
+});
+test('convert2Pacific: default returns date string', () => {
+    const d = new Date('2025-06-15T14:00:00Z');
+    const result = convert2Pacific(d, 'STRING');
+    assert(typeof result === 'string', 'should return string: ' + result);
+    assert(result.includes('/'), 'string has slash separators: ' + result);
+});
+test('convert2Pacific: DST boundary — spring forward does not produce NaN', () => {
+    // 2025 spring-forward: March 9 at 2am
+    const d = new Date('2025-03-09T10:00:00Z');
+    const result = convert2Pacific(d, 'TDATE');
+    assert(!isNaN(result.getTime()), 'result should be valid Date');
+});
+test('convert2Pacific: DST boundary — fall back does not produce NaN', () => {
+    // 2025 fall-back: Nov 2 at 2am
+    const d = new Date('2025-11-02T10:00:00Z');
+    const result = convert2Pacific(d, 'TDATE');
+    assert(!isNaN(result.getTime()), 'result should be valid Date');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// socialut.js — pure functions (readTextDocument, decodeName)
+// ─────────────────────────────────────────────────────────────────────────────
+
+console.log('\nsocialut.js');
+
+{
+    // Load only the pure functions — skip jQuery $.ajax and module-level code
+    // readTextDocument and decodeName have no DOM/chrome/jQuery dependencies
+    const fs = require('fs');
+    const vm = require('vm');
+    const src = fs.readFileSync(require('path').join(srcDir, 'socialut.js'), 'utf8');
+    // Stub out jQuery and globals that fire at load time but aren't needed for pure functions
+    const sandbox = {
+        nameFile: null,
+        alertStatus: false,
+        newURL: '',
+        $: () => ({ ajax: () => {} }),
+        console,
+        alert: () => {},
+    };
+    // Only eval the pure function definitions, not the module-level $.ajax calls
+    // Extract readTextDocument and decodeName by running full source with safe stubs
+    vm.runInNewContext(src, sandbox);
+
+    test('readTextDocument: parses tab-separated name file', () => {
+        const data = 'ignored-header-line\nAlice\tRaterAlice\nBob\tRaterBob';
+        const result = sandbox.readTextDocument(data);
+        assertEqual(result.rows.length, 2);
+        assertEqual(result.rows[0].MDEHandle, 'Alice');
+        assertEqual(result.rows[0].RaterLabs, 'RaterAlice');
+        assertEqual(result.rows[1].MDEHandle, 'Bob');
+    });
+    test('readTextDocument: skips blank lines', () => {
+        const data = 'header\nAlice\tRaterAlice\n\nBob\tRaterBob';
+        const result = sandbox.readTextDocument(data);
+        assertEqual(result.rows.length, 2);
+    });
+    test('readTextDocument: empty data returns zero rows', () => {
+        const result = sandbox.readTextDocument('header');
+        assertEqual(result.rows.length, 0);
+    });
+    test('decodeName: returns MDEHandle for known RaterLabs name', () => {
+        // Set nameFile inside the same vm context so decodeName's closure sees it
+        vm.runInNewContext(
+            'nameFile = readTextDocument("header\\nAlice\\tRaterAlice\\nBob\\tRaterBob");',
+            sandbox
+        );
+        assertEqual(sandbox.decodeName('RaterAlice'), 'Alice');
+        assertEqual(sandbox.decodeName('RaterBob'), 'Bob');
+    });
+    test('decodeName: returns original name when not found', () => {
+        vm.runInNewContext(
+            'nameFile = readTextDocument("header\\nAlice\\tRaterAlice");',
+            sandbox
+        );
+        assertEqual(sandbox.decodeName('Unknown'), 'Unknown');
+    });
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Edge cases and boundary conditions
@@ -1163,6 +1356,27 @@ test('invoice_getStartofPeriod: matches dates_getStartofPeriod', () => {
     const fromDates   = dates_getStartofPeriod(d);
     const fromInvoice = invoice_getStartofPeriod(new Date(d));
     assertEqual(fromDates.getTime(), fromInvoice.getTime());
+});
+
+// badDate — checks whether a date falls outside a period string "Label: M/D/YYYY - M/D/YYYY"
+test('badDate: date within range returns false', () => {
+    assert(!badDate('Period: 1/1/2025 - 1/31/2025', '1/15/2025'));
+});
+test('badDate: date before range returns true', () => {
+    assert(badDate('Period: 2/1/2025 - 2/28/2025', '1/31/2025'));
+});
+test('badDate: date after range returns true', () => {
+    assert(badDate('Period: 1/1/2025 - 1/31/2025', '2/1/2025'));
+});
+test('badDate: date equal to start boundary returns false', () => {
+    assert(!badDate('Period: 1/1/2025 - 1/31/2025', '1/1/2025'));
+});
+test('badDate: date equal to end boundary returns false', () => {
+    assert(!badDate('Period: 1/1/2025 - 1/31/2025', '1/31/2025'));
+});
+test('badDate: malformed string missing colon returns false', () => {
+    // strs.length != 2 → logs warning and returns false
+    assert(!badDate('nocolon', '1/15/2025'));
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1366,6 +1580,382 @@ test('check4filtermatch: comma-separated phrase string', () => {
     const result = check4filtermatch('Hello World', 'goodbye,world', null);
     assertEqual(result, 'world');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// background.js — pure functions (loaded in isolated vm sandbox)
+// ─────────────────────────────────────────────────────────────────────────────
+
+console.log('\nbackground.js (pure)');
+
+{
+    const fs   = require('fs');
+    const vm   = require('vm');
+    const path = require('path');
+
+    // background.js depends on dates.js functions and several globals.
+    // Load dates.js first, then shim the globals background needs, then
+    // extract only the pure functions we want to test.
+    const rhSrc    = fs.readFileSync(path.join(srcDir, 'rh-status.js'), 'utf8');
+    const datesSrc = fs.readFileSync(path.join(srcDir, 'dates.js'), 'utf8');
+    const bgSrc    = fs.readFileSync(path.join(srcDir, 'background.js'), 'utf8');
+
+    const noop = () => {};
+    const evtStub = { addListener: noop, removeListener: noop, hasListener: () => false };
+
+    const sandbox = {
+        console,
+        logObject: noop,
+        GetLogStatus: () => false,
+        chrome: {
+            runtime:      { id: 'test', lastError: null, onMessage: evtStub, onInstalled: evtStub, onStartup: evtStub, getURL: () => '' },
+            storage:      { local: { get: noop, set: noop }, sync: { get: noop, set: noop } },
+            tabs:         { onUpdated: { ...evtStub }, onRemoved: { ...evtStub }, query: noop, create: noop, update: noop, remove: noop },
+            sessions:     { getRecentlyClosed: noop },
+            contextMenus: { removeAll: noop, create: () => 0, onClicked: evtStub },
+            alarms:       { create: noop, onAlarm: evtStub },
+            notifications: { create: noop },
+        },
+        Date, JSON, parseInt, parseFloat, isNaN, Math, Array, Object, String, Number, Boolean, Error, RegExp,
+        setTimeout: () => 0, clearTimeout: noop, setInterval: () => 0, clearInterval: noop,
+    };
+
+    // Load dependencies in order: rh-status defines RHstatus, dates defines date helpers
+    vm.runInNewContext(rhSrc,    sandbox);
+    vm.runInNewContext(datesSrc, sandbox);
+    vm.runInNewContext(bgSrc,    sandbox);
+
+    // validDateRec
+    test('validDateRec: valid row passes', () => {
+        // [taskId, dateStr, aetStr, workStr]
+        assert(sandbox.validDateRec(['1234567890', '6/15/2024', '9.0', '00:08:00']));
+    });
+    test('validDateRec: "Total" header row passes', () => {
+        assert(sandbox.validDateRec(['Total week', '', '', '']));
+    });
+    test('validDateRec: "Task" header row passes', () => {
+        assert(sandbox.validDateRec(['Task', '', '', '']));
+    });
+    test('validDateRec: taskId too short returns false', () => {
+        assert(!sandbox.validDateRec(['123', '6/15/2024', '9.0', '']));
+    });
+    test('validDateRec: invalid date returns false', () => {
+        assert(!sandbox.validDateRec(['1234567890', 'not-a-date', '9.0', '']));
+    });
+    test('validDateRec: non-numeric AET returns false', () => {
+        assert(!sandbox.validDateRec(['1234567890', '6/15/2024', 'abc', '']));
+    });
+    test('validDateRec: AET with range parens — takes first part', () => {
+        // "9.0(8-10)" — AETs[0] = "9.0", parseFloat = 9.0 → valid
+        assert(sandbox.validDateRec(['1234567890', '6/15/2024', '9.0(8-10)', '']));
+    });
+
+    // urlIsnotTask
+    test('urlIsnotTask: empty string returns true', () => {
+        assert(sandbox.urlIsnotTask(''));
+    });
+    test('urlIsnotTask: URL with taskIds= returns false', () => {
+        assert(!sandbox.urlIsnotTask('https://www.raterhub.com/evaluation/rater/task/show?taskIds=123'));
+    });
+    test('urlIsnotTask: non-task URL returns true', () => {
+        assert(sandbox.urlIsnotTask('https://www.raterhub.com/evaluation/rater'));
+    });
+
+    // removetStar
+    test('removetStar: trailing * removed', () => {
+        assertEqual(sandbox.removetStar('hello*'), 'hello');
+    });
+    test('removetStar: no trailing * unchanged', () => {
+        assertEqual(sandbox.removetStar('hello'), 'hello');
+    });
+    test('removetStar: empty string unchanged', () => {
+        assertEqual(sandbox.removetStar(''), '');
+    });
+    test('removetStar: only * returns empty string', () => {
+        assertEqual(sandbox.removetStar('*'), '');
+    });
+
+    // buildChatTextAlertsArray
+    test('buildChatTextAlertsArray: null returns null', () => {
+        assertEqual(sandbox.buildChatTextAlertsArray(null), null);
+    });
+    test('buildChatTextAlertsArray: empty string returns null', () => {
+        assertEqual(sandbox.buildChatTextAlertsArray(''), null);
+    });
+    test('buildChatTextAlertsArray: single phrase builds one-element array', () => {
+        const result = sandbox.buildChatTextAlertsArray('hello');
+        assertEqual(result.length, 1);
+        assertEqual(result[0].phrase, 'hello');
+        assert(result[0].lastDate instanceof Date);
+    });
+    test('buildChatTextAlertsArray: comma-separated list builds multiple elements', () => {
+        const result = sandbox.buildChatTextAlertsArray('hello,world,foo');
+        assertEqual(result.length, 3);
+        assertEqual(result[1].phrase, 'world');
+    });
+
+    // trackCleanup
+    test('trackCleanup: keeps records newer than cutoff', () => {
+        const now = Date.now();
+        const recs = [
+            { dateofTask: new Date(now - 86400000).toString() },  // 1 day ago
+            { dateofTask: new Date(now - 5 * 86400000).toString() }, // 5 days ago
+        ];
+        const result = sandbox.trackCleanup(recs, 7, null);
+        assertEqual(result.length, 2);
+    });
+    test('trackCleanup: prunes records older than days', () => {
+        const now = Date.now();
+        const recs = [
+            { dateofTask: new Date(now - 86400000).toString() },       // 1 day — keep
+            { dateofTask: new Date(now - 200 * 86400000).toString() }, // 200 days — prune
+        ];
+        const result = sandbox.trackCleanup(recs, 30, null);
+        assertEqual(result.length, 1);
+    });
+    test('trackCleanup: compDateIn overrides days calculation', () => {
+        const cutoff = new Date(Date.now() - 10 * 86400000); // 10 days ago as cutoff
+        const recs = [
+            { dateofTask: new Date(Date.now() - 5 * 86400000).toString() },  // 5 days — keep
+            { dateofTask: new Date(Date.now() - 15 * 86400000).toString() }, // 15 days — prune
+        ];
+        const result = sandbox.trackCleanup(recs, 999, cutoff);
+        assertEqual(result.length, 1);
+    });
+    test('trackCleanup: empty array returns empty', () => {
+        assertEqual(sandbox.trackCleanup([], 30, null).length, 0);
+    });
+
+    // oneSelected
+    test('oneSelected: all false returns false', () => {
+        assert(!sandbox.oneSelected({ nrt:0, uo:0, ac:0, sapr:0, hr:0, pr:0, hrs:0, hm:0, nrtstart:0, nrtstop:0 }));
+    });
+    test('oneSelected: nrt=1 returns true', () => {
+        assert(sandbox.oneSelected({ nrt:1, uo:0, ac:0, sapr:0, hr:0, pr:0, hrs:0, hm:0, nrtstart:0, nrtstop:0 }));
+    });
+    test('oneSelected: any truthy flag returns true', () => {
+        assert(sandbox.oneSelected({ nrt:0, uo:0, ac:1, sapr:0, hr:0, pr:0, hrs:0, hm:0, nrtstart:0, nrtstop:0 }));
+    });
+
+    // updateThisday
+    test('updateThisday: adds new record when date not found', () => {
+        const arr = [{ date: '6/14/2024', raetMils: 100, workMils: 200, platform: 'PC' }];
+        const result = sandbox.updateThisday(arr, { date: '6/15/2024', raetMils: 300, workMils: 400, platform: 'PC' });
+        assertEqual(result.length, 2);
+    });
+    test('updateThisday: updates existing record on matching date+platform', () => {
+        const arr = [{ date: '6/15/2024', raetMils: 100, workMils: 200, platform: 'PC' }];
+        const result = sandbox.updateThisday(arr, { date: '6/15/2024', raetMils: 999, workMils: 888, platform: 'PC' });
+        assertEqual(result.length, 1);
+        assertEqual(result[0].raetMils, 999);
+        assertEqual(result[0].workMils, 888);
+    });
+    test('updateThisday: same date different platform adds new record', () => {
+        const arr = [{ date: '6/15/2024', raetMils: 100, workMils: 200, platform: 'PC' }];
+        const result = sandbox.updateThisday(arr, { date: '6/15/2024', raetMils: 300, workMils: 400, platform: 'Mac' });
+        assertEqual(result.length, 2);
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// popup.js — pure functions (loaded in isolated vm sandbox)
+// ─────────────────────────────────────────────────────────────────────────────
+
+console.log('\npopup.js (pure)');
+
+{
+    const fs   = require('fs');
+    const vm   = require('vm');
+    const path = require('path');
+
+    const datesSrc  = fs.readFileSync(path.join(srcDir, 'dates.js'),  'utf8');
+    const utilsSrc  = fs.readFileSync(path.join(srcDir, 'utils.js'),  'utf8');
+    const popupSrc  = fs.readFileSync(path.join(srcDir, 'popup.js'),  'utf8');
+
+    const noop2  = () => {};
+    const jqEl   = () => ({ is: noop2, val: () => '', children: () => ({ length: 0 }), find: () => ({ length: 0, first: () => ({}) }), text: () => '', html: () => '', append: noop2, remove: noop2, each: noop2, on: () => jqEl(), off: noop2, css: noop2, show: noop2, hide: noop2, prepend: noop2, attr: () => '', prop: () => false, click: noop2, change: noop2 });
+    const sandbox = {
+        console,
+        chrome: {
+            runtime:  { id: 'test', lastError: null, onMessage: { addListener: noop2 }, getURL: () => '' },
+            storage:  { local: { get: noop2, set: noop2, remove: noop2 }, sync: { remove: noop2 } },
+        },
+        $: jqEl,
+        document:  { getElementById: () => null, getElementsByClassName: () => [], createElement: () => ({ style: {}, appendChild: noop2 }), body: { appendChild: noop2 }, addEventListener: noop2 },
+        window:    { location: { href: '' }, addEventListener: noop2 },
+        alert: noop2, confirm: () => false,
+        navigator: { clipboard: { writeText: () => Promise.resolve() } },
+        s_myComputer: { number: 1, desc: 'TestMachine' },
+        logObject: noop2, GetLogStatus: () => false, isValidChromeRuntime: () => false, SendSafeRuntimeMessage: noop2,
+        setInterval: () => 0, clearInterval: noop2, setTimeout: () => 0, clearTimeout: noop2,
+        Date, JSON, parseInt, parseFloat, isNaN, Math, Array, Object, String, Number, Boolean, Error, RegExp,
+    };
+
+    vm.runInNewContext(datesSrc, sandbox);
+    vm.runInNewContext(utilsSrc, sandbox);
+    vm.runInNewContext(popupSrc, sandbox);
+
+    // platform2thisComputer
+    test('platform2thisComputer: parses "1 MyLaptop"', () => {
+        const result = sandbox.platform2thisComputer('1 MyLaptop');
+        assertEqual(result.number, 1);
+        assertEqual(result.desc, 'MyLaptop');
+    });
+    test('platform2thisComputer: parses multi-word desc', () => {
+        const result = sandbox.platform2thisComputer('3 Home Desktop PC');
+        assertEqual(result.number, 3);
+        assertEqual(result.desc, 'Home Desktop PC');
+    });
+
+    // makeComputerNameShort
+    test('makeComputerNameShort: truncates to 10 chars', () => {
+        assertEqual(sandbox.makeComputerNameShort('ABCDEFGHIJKLMNOP'), 'ABCDEFGHIJ');
+    });
+    test('makeComputerNameShort: short string unchanged', () => {
+        assertEqual(sandbox.makeComputerNameShort('PC'), 'PC');
+    });
+    test('makeComputerNameShort: null returns null', () => {
+        assertEqual(sandbox.makeComputerNameShort(null), null);
+    });
+
+    // getFilterConstant — reads getReleasedConstant, getncConstant (from utils.js), inProcessFilterStr
+    test('getFilterConstant: "r" maps to released constant', () => {
+        const result = sandbox.getFilterConstant('r');
+        assertEqual(result, sandbox.getReleasedConstant());
+    });
+    test('getFilterConstant: "nc" maps to nc constant', () => {
+        assertEqual(sandbox.getFilterConstant('nc'), sandbox.getncConstant());
+    });
+    test('getFilterConstant: "ip" maps to inProcessFilterStr', () => {
+        assertEqual(sandbox.getFilterConstant('ip'), 'InProcess');
+    });
+    test('getFilterConstant: unknown value passes through unchanged', () => {
+        assertEqual(sandbox.getFilterConstant('submitted'), 'submitted');
+    });
+
+    // s_getsound
+    test('s_getsound: returns default when active is empty', () => {
+        const sounds = [{ type: 'TRACKER', active: '', default: 'beep.mp3' }];
+        assertEqual(sandbox.s_getsound(sounds, 'TRACKER'), 'beep.mp3');
+    });
+    test('s_getsound: returns "custom" when active has no .mp3 and is not NONE', () => {
+        const sounds = [{ type: 'TRACKER', active: 'custom-sound-id', default: 'beep.mp3' }];
+        assertEqual(sandbox.s_getsound(sounds, 'TRACKER'), 'custom');
+    });
+    test('s_getsound: returns active when it ends in .mp3', () => {
+        const sounds = [{ type: 'TRACKER', active: 'train.mp3', default: 'beep.mp3' }];
+        assertEqual(sandbox.s_getsound(sounds, 'TRACKER'), 'train.mp3');
+    });
+
+    // processTotalLine — returns an HTML string, check structure not exact markup
+    test('processTotalLine: returns HTML string with date', () => {
+        const html = sandbox.processTotalLine(9, 480000, '6/15/2024', 5, true, false, 9);
+        assert(typeof html === 'string', 'should return string');
+        assert(html.includes('6/15/2024'), 'should contain date');
+        assert(html.includes('<tr'), 'should contain table row');
+    });
+    test('processTotalLine: negative surplus shows red class', () => {
+        // totalAET=5min, totalTime=600000ms (10min) → diff = -300000 → overtime
+        const html = sandbox.processTotalLine(5, 600000, '6/15/2024', 5, true, false, 5);
+        assert(html.includes('rednogrey'), 'should show red for overtime: ' + html.substring(0, 200));
+    });
+    test('processTotalLine: positive surplus shows green class', () => {
+        // totalAET=20min, totalTime=600000ms (10min) → diff = 600000 → under time
+        const html = sandbox.processTotalLine(20, 600000, '6/15/2024', 5, true, false, 20);
+        assert(html.includes('greennogrey'), 'should show green for under time');
+    });
+
+    // buildTotalCLine — also returns HTML
+    test('buildTotalCLine: returns HTML string with total label', () => {
+        const html = sandbox.buildTotalCLine(9, 480000, 5, '6/15/2024', true);
+        assert(typeof html === 'string');
+        assert(html.includes('<tr'), 'should contain table row');
+        assert(html.includes('Total for'), 'should include total label');
+    });
+    test('buildTotalCLine: productivity calculation appears', () => {
+        // 9min AET = 540000ms, 480000ms work → (540000/480000)*100 = 112.5%
+        const html = sandbox.buildTotalCLine(9, 480000, 5, '6/15/2024', true);
+        assert(html.includes('%'), 'should include productivity percentage');
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phrases.js — additional pure functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+console.log('\nphrases.js (pure additions)');
+
+{
+    const fs   = require('fs');
+    const vm   = require('vm');
+    const path = require('path');
+
+    const src = fs.readFileSync(path.join(srcDir, 'phrases.js'), 'utf8');
+    const sandbox = {
+        console,
+        document: { getElementById: () => null, addEventListener: () => {} },
+        $: () => ({ on: () => {}, off: () => {}, val: () => '', text: () => '', css: () => {}, remove: () => {}, find: () => ({ length: 0, each: () => {} }), each: () => {} }),
+        window: {},
+        chrome: { runtime: { id: 'test', onMessage: { addListener: () => {} } } },
+        SendSafeRuntimeMessage: () => {},
+        isValidChromeRuntime: () => false,
+        s_phraseArray: [],
+        s_optSentence: false,
+    };
+    vm.runInNewContext(src, sandbox);
+
+    // s_phraseArray is declared with `let` inside phrases.js so it shadows the sandbox
+    // property. Set it inside the vm context after load via a second runInNewContext call.
+    const testPhrases = [
+        { Phrase: 'hello world' },
+        { Phrase: 'hello there' },
+        { Phrase: 'goodbye' },
+        { Phrase: 'help me' },
+    ];
+    vm.runInNewContext('s_phraseArray = phrases; s_optSentence = false;',
+        Object.assign(sandbox, { phrases: testPhrases }));
+
+    // wordfindStr: finds phrases that START WITH the last word typed
+    test('wordfindStr: finds matching prefix phrases', () => {
+        const result = sandbox.wordfindStr('hel');
+        // "hel" should match "hello world" and "hello there" and "help me"
+        assert(result.length >= 2, 'should find matches: ' + result.length);
+    });
+    test('wordfindStr: no match returns empty array', () => {
+        const result = sandbox.wordfindStr('zzz');
+        assertEqual(result.length, 0);
+    });
+    test('wordfindStr: exact match excluded (prefix only, not equal)', () => {
+        // "goodbye" exists but wordfindStr requires tStr != str2examine
+        vm.runInNewContext('s_phraseArray = p;', Object.assign(sandbox, { p: [{ Phrase: 'goodbye' }] }));
+        const result = sandbox.wordfindStr('GOODBYE');
+        assertEqual(result.length, 0);
+        // restore
+        vm.runInNewContext('s_phraseArray = p;', Object.assign(sandbox, { p: testPhrases }));
+    });
+
+    // findStr: sentence mode (s_optSentence=false → delegates to wordfindStr)
+    test('findStr: with s_optSentence=false delegates to wordfindStr', () => {
+        vm.runInNewContext('s_optSentence = false;', sandbox);
+        const result = sandbox.findStr('hel');
+        assert(result.length >= 2);
+    });
+    test('findStr: with s_optSentence=true uses last sentence fragment', () => {
+        vm.runInNewContext('s_optSentence = true;', sandbox);
+        // "First sentence. hel" → last piece is " hel" → trimmed "HEL"
+        const result = sandbox.findStr('First sentence. hel');
+        assert(result.length >= 2, 'should match by last fragment');
+        vm.runInNewContext('s_optSentence = false;', sandbox); // restore
+    });
+
+    // getFirstRow
+    test('getFirstRow: returns first row of table object', () => {
+        const tbl = { rows: [{ cells: ['a'] }, { cells: ['b'] }] };
+        assertEqual(sandbox.getFirstRow(tbl), tbl.rows[0]);
+    });
+    test('getFirstRow: empty table returns null', () => {
+        assertEqual(sandbox.getFirstRow({ rows: [] }), null);
+    });
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Results

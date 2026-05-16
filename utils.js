@@ -112,7 +112,6 @@ function NRTLogCleanup(logData) {
         let compDate = new Date(rec.dateMills);
         return (compDate > dday);
     });
-    if (newlogData.length != startlen)
     return newlogData;
 }
 
@@ -333,7 +332,7 @@ function buildTaskId(inUrl) {
 }
 
 // timezone is L, P, or none (which is L)
-// convert2Pacfic(datein, dateOutType)  input is always a javascript date. output type can be STRING or TDATE (javascript date)
+// convert2Pacific(datein, dateOutType)  input is always a javascript date. output type can be STRING or TDATE (javascript date)
 
 //this function is called from:
 // popup.js - before displaying records in the table
@@ -390,7 +389,7 @@ function localSort(dataA, who, timezone) {
     if (timezone == "P")
         dataB.forEach(function (el) {
             let date = new Date(el.dateofTask);
-            el.dateofTask = convert2Pacfic(date, "STRING");
+            el.dateofTask = convert2Pacific(date, "STRING");
         });
 
     return dataB;
@@ -431,7 +430,7 @@ function reverseSort(dataA, who, timezone) {
     if (timezone == "P")
         dataB.forEach(function (el) {
             let date = new Date(el.dateofTask);
-            el.dateofTask = convert2Pacfic(date, "STRING");
+            el.dateofTask = convert2Pacific(date, "STRING");
         });
 
     return dataB;
@@ -1445,10 +1444,6 @@ function anyIncomplete(dataArray, startDate, endDate) {
  * @param {boolean} international
  */
 function setURL(suffix, international) {
-    let prefix = USRoot;
-    if (international) {
-        prefix = IntlRoot;
-    }
-    prefix = USRoot;
+    let prefix = international ? IntlRoot : USRoot;
     return prefix + suffix;
 }

@@ -1058,7 +1058,7 @@ window.addEventListener('load', function (evt) {
         }
         else {
             $("#convertP").text('Set to Local');
-            dTemp = convert2Pacfic(dTemp, "TDATE");
+            dTemp = convert2Pacific(dTemp, "TDATE");
         }
         //if (periodArray == null) {           
         periodArray = buildperiodSelectUS(dTemp, true);
@@ -1526,7 +1526,7 @@ window.addEventListener('load', function (evt) {
                 //if (periodArray == null) {
                 dTemp = new Date();
                 if (s_timezone == "P")
-                    dTemp = convert2Pacfic(dTemp, "TDATE");
+                    dTemp = convert2Pacific(dTemp, "TDATE");
                 periodArray = buildperiodSelectUS(dTemp, false);
                 //}
                 $('.tablearea').children().remove();
@@ -2170,7 +2170,7 @@ function buildTable(data, zone, invoice, filter) {
 
     if (zone == "P") {
         setTrackHeaderMsg('Date and Time of the Tasks are in Pacific Timezone', "black");
-        d = convert2Pacfic(d, "TDATE");
+        d = convert2Pacific(d, "TDATE");
     }
     else
         setTrackHeaderMsg('Date and Time of the Tasks are in your local Timezone', "black");

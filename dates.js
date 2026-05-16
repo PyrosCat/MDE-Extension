@@ -635,7 +635,7 @@ function getCaOffset(input) {
  * @param {string} dateOutType
  * @returns {*}
  */
-function convert2Pacfic(datein, dateOutType) {
+function convert2Pacific(datein, dateOutType) {
     let d = new Date(datein);
     let mills;
     let mins = d.getTimezoneOffset();

@@ -164,6 +164,9 @@
       "https://raterlabs.appen.com/qrp/core/vendors/invoice",
       "https://raterlabs.appen.com/qrp/core/vendors/invoice/edit/*",
       "https://raterlabs.appen.com/qrp/core/vendors/invoices",
+      "https://connect.appen.com/qrp/core/vendors/invoice",
+      "https://connect.appen.com/qrp/core/vendors/invoice/edit/*",
+      "https://connect.appen.com/qrp/core/vendors/invoices",
       "https://appen.com/*",
       "https://raterhub.com/*"
    ],
@@ -190,7 +193,8 @@
       {
          "matches": [
             "https://raterlabs.appen.com/*",
-            "https://www.raterhub.com/*"
+            "https://www.raterhub.com/*",
+            "https://connect.appen.com/*"
          ],
          "resources": [
             "gotmail.mp3",

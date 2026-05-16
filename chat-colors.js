@@ -497,14 +497,6 @@ function colorMonitor(td) {
 
 
 /**
- * Apply color settings to the full chat table on load.
- */
-function colors() {
-    //apply();
-    turnDark(true);
-}
-
-/**
  * Initialize and display the color-picker UI for a color slot.
  */
 function colorpicker() {
@@ -514,22 +506,19 @@ function colorpicker() {
 
 //main line code
 
-let s_useOS = true;
 let s_yukonOnly = false;
 
 /**
  * Load saved color settings from storage and apply them to the chat.
  *
- * @param {Date} data
- * @param {Object} useOS
+ * @param {Array} data
  * @param {boolean} yukonOnly
  */
-function initColors(data, useOS, yukonOnly) {
+function initColors(data, yukonOnly) {
     s_yukonOnly = yukonOnly;
     addColorPickerbutton();
     myAlias = getMyAlias();
     colorOptions = data;
-    s_useOS = useOS;
     if (chatLoaded() == false) {
         //let div = document.getElementById("online-users");  // I don't want to monitor until page is loaded - this is done last
         installObserversColors();
@@ -731,13 +720,10 @@ let buttons = [
 ];
 //set to true at the moment in the controlObj
 /**
- * Display the color-choice panel for standard color slots.
+ * Display the color-choice panel.
  */
 function showColorChoices() {
-    if (s_useOS)
-        showColorChoicesOS();
-    else
-        bootshowColorChoices();
+    showColorChoicesOS();
 }
 
 /**
@@ -1044,10 +1030,7 @@ function processColorFile(data) { // use for restore track data from backup
         tempData.push({ id: thisData[0], normal: thisData[1], custom: thisData[2] });
     }
 
-    if (s_useOS) 
-        setColorsfromButtons(true, tempData);
-    else
-        setColorsfromBoot(true, tempData);
+    setColorsfromButtons(true, tempData);
 }
 
 /**
@@ -1237,317 +1220,4 @@ function getMyAlias() {
         }
     }
     return null;
-}
-
-//function bootshowColorChoices(el) {
-
-//    for positioning
-//    let imgBut = document.getElementById("mdecolorW");
-//    where2paste = imgBut.parentElement;
-
-//    init
-//    get rid of an old one
-//    let div = document.getElementById("colorwheel");
-//    if (div != null) {
-//        div.parentElement.removeChild(div);
-//        console.log("colors already showing - why push button again - mistake most likely, starting over");
-//    }
-//    where to insert - want to be sure its on top - make it last
-//    $('body').append(bootcolorWheelHTML);
-//    $(where2paste.parentElement).append(colorWheelHTML);
-
-//    div = document.getElementById("colorwheel");
-//    if (div == null) {
-//        console.log("problem");
-//        return;
-//    }
-
-//    let rect = where2paste.getBoundingClientRect();
-//    let newLeft = newLeft = rect.left - div.offsetWidth;
-//    if (newLeft < 0) {
-//        newLeft = window.pageXOffset;
-//    }
-//    div.style.left = newLeft.toString() + "px";
-//    div.style.top = "1px";
-
-//    $('#fColor').colorpicker({ align: "left", template: template });
-//    $('#fColor').on('hidePicker', function (el) {
-//        $("#fColor")[0].style.color = $("#fColor").val();
-//        $("#fColor")[0].style.backgroundColor = $("#fColor").val();
-//    });
-
-
-//    buttons.forEach(function (el) {
-//        el.changed = false;
-//        let butName = "#" + el.button;
-//        $(butName).colorpicker({ align: "left", template: template });
-//        $(butName).on('hidePicker', function (ev) {
-//            let colorNow = $(butName).val();
-//            $("#fColor")[0].style.color = $("#fColor").val();
-//            $("#fColor")[0].style.backgroundColor = $("#fColor").val();
-//            if (colorNow != null && colorNow != '') {
-//                el.value = colorNow;
-//                el.changed = true;
-//                setColorsfromBoot(false, null);
-//            }
-//        });
-//    });
-
-//    setColorsfromBoot(true, null);
-
-//    $("#cancelColors").click(function (el) {
-//        let div = document.getElementById("colorwheel");
-//        if (div != null)
-//            div.parentElement.removeChild(div);
-//    });
-
-//    here - test this
-//    $("#saveColors").click(function (el) {
-//        buttons.forEach(function (el) {
-//            if (el.changed) {
-//                let butName = "#" + el.button;
-//                let one2change = colorOptions.findIndex(x => x.id == el.button);
-//                if (one2change > -1) {
-//                    if (el.style == 'f')
-//                        colorOptions[one2change].custom = $(butName)[0].style.color;
-//                    else
-//                        colorOptions[one2change].custom = $(butName)[0].style.backgroundColor;
-//                }
-//            }
-//        });
-//        apply();
-//        send coloroptions to background to save it
-//        if (isValidChromeRuntime())
-//            SendSafeRuntimeMessage({ text: "SAVECOLORS", data: colorOptions });
-//        let div = document.getElementById("colorwheel");
-//        if (div != null) {
-//            div.parentElement.removeChild(div);
-//        }
-//    });
-
-//    $("#revertColors").click(function (el) {
-//        set all custom colors to default
-//        colorOptions.forEach(function (el) {
-//            el.custom = null;
-//        });
-//        //reload reset coloropts in background
-//        if (isValidChromeRuntime())
-//            SendSafeRuntimeMessage({ text: "REVERTCOLORS" });
-//    });
-
-//    $("#exportColors").click(function (el) {
-//        set all custom colors to default
-//        let div = document.getElementById("colorwheel");
-//        if (div != null)
-//            div.parentElement.removeChild(div);
-//        if (isValidChromeRuntime())
-//            SendSafeRuntimeMessage({ text: "EXPCOLORS" });
-//    });
-
-//    $("#importColorsF").click(function (el) {
-//        let fileSelector = document.createElement('input');
-//        fileSelector.setAttribute('type', 'file');
-//        let selectDialogueLink = document.createElement('a');
-//        selectDialogueLink.setAttribute('href', '');
-//        selectDialogueLink.innerText = "Select File";
-//        $(fileSelector).change("change", function () {
-//            if (fileSelector.files.length == 1) {
-//                let reader = new FileReader();
-//                let data;
-//                reader.onload = function (data) {
-//                    data = reader.result;
-//                    processColorFile(reader.result);
-//                };
-//                reader.readAsText(fileSelector.files[0]);
-//            }
-//        });
-//        $(fileSelector).trigger("click");
-//    });
-
-//    $("#importColorsU").click(function (el) {
-//        get the url - or put text input area on screen
-//        processColorFile(data);
-//    });
-
-//}
-//not in use at the moment
-//function setColorsfromBoot(initButtons, optData) {
-
-//    let array2use = optData == null ? colorOptions : optData;
-
-//    if (initButtons) { // init buttons from colorOptions first
-//        buttons.forEach(function (el) {
-//            el.changed = false;
-//            let one2change = array2use.findIndex(x => x.id == el.button);
-//            if (one2change > -1 && array2use[one2change].custom != null) {
-//                el.changed = true;
-//                el.value = array2use[one2change].custom;
-//            }
-//        });
-//    }
-
-
-//    set colors from buttons array
-//    buttons.forEach(function (el) {
-//        let butName = "#" + el.button;
-//        if (el.value != null) {
-//            $(butName)[0].style.color = el.value;
-//            $(butName)[0].style.backgroundColor = el.value;
-//        }
-//        let fColor = buttons.findIndex(x => x.button == el.f);
-//        if (fColor > -1 && buttons[fColor].value != null)
-//            $(butName)[0].style.color = buttons[fColor].value;
-//        let bColor = buttons.findIndex(x => x.button == el.b);
-//        if (bColor > -1 && buttons[bColor].value != null)
-//            $(butName)[0].style.backgroundColor = buttons[bColor].value;
-//    });
-
-//    let trbs = document.getElementsByClassName("trb");
-//    set foreground trb if applicable
-//    let one2change = buttons.findIndex(x => x.button == "fColor");
-//    if (one2change > -1 && buttons[one2change].value != null) {
-//        for(let i = 0; i < trbs.length; i++)
-//            trbs[i].style.color = buttons[one2change].value;
-//    }
-//    set background trb if applicable
-//    one2change = buttons.findIndex(x => x.button == "bColor");
-//    if (one2change > -1 && buttons[one2change].value != null) {
-//        for(let i = 0; i < trbs.length; i++)
-//            trbs[i].style.backgroundColor = buttons[one2change].value;
-//    }
-
-//}
-
-//let bootcolorWheelHTML = '<div id="colorwheel">' +
-//    '   <div class="colorButtons">' +
-//    '      <button class="Submit" type="button" id="saveColors">Apply</button>' +
-//    '     <button class="Submit" type="button" id="revertColors">Revert to default</button>' +
-//    '    <button class="Submit" type="button" id="cancelColors">Cancel</button>' +
-//    '</div>' +
-//    '<p>' +
-//    '</p>' +
-//    '<div id="chatScreen">' +
-//    '   <table>' +
-//    '      <tbody>' +
-//    '         <tr>' +
-//    '            <td>' +
-//    '               <label class="colorLabel" for="fColor">Foreground</label>' +
-//    '              <input id="fColor" type="button" class="form-control pickColorClass" value="rgb(255, 128, 0)" />' +
-//    '         </td>' +
-//    '        <td>' +
-//    '           <label class="colorLabel" for="bColor">Background</label>' +
-//    '          <input id="bColor" type="button" class="form-control pickColorClass" value="rgb(255, 128, 0)" />' +
-//    '     </td>' +
-//    '    <td>' +
-//    '       <label class="colorLabel" for="mColor">My Color</label>' +
-//    '      <input id="mColor" type="button" class="form-control pickColorClass" value="rgb(255, 128, 0)" />' +
-//    ' </td>' +
-//    '          </tr>' +
-//    '         <tr class="trb">' +
-//    '            <td colspan="3">' +
-//    '               <img src="https://raterlabs.appen.com/qrp/images/raterlabs/raterlabs_header_logo.png?2" border="0" style="        width: 80px;' +
-//    '       height: 40px;">' +
-//    '                      </td>' +
-//    '                 </tr>' +
-//    '                <tr class="trb">' +
-//    '                   <td id="postsNames">' +
-//    '                      <label class="colorLabel" for="paColor">Senior</label>' +
-//    '                     <input id="paColor" type="button" class="form-control pickColorClass" value="rgb(255, 128, 0)" />' +
-//    '                    <br>' +
-//    '                   <label class="colorLabel" for="oaColor">Grey</label>' +
-//    '                  <input id="oaColor" type="button" class="form-control pickColorClass" value="rgb(255, 128, 0)" />' +
-//    '                 <br>' +
-//    '                <label class="colorLabel" for="aaColor">Admin</label>' +
-//    '               <input id="aaColor" type="button" class="form-control pickColorClass" value="rgb(255, 128, 0)" />' +
-//    '          </td>' +
-//    '         <td id="posts">' +
-//    '            <label class="colorLabel" for="pfColor">Text</label>' +
-//    '           <input id="pfColor" type="button" class="form-control pickColorClass" value="rgb(255, 128, 0)" />' +
-//    '          <br>' +
-//    '         <label class="colorLabel" for="pbColor">Background</label>' +
-//    '        <input id="pbColor" type="button" class="form-control pickColorClass" value="rgb(255, 128, 0)" />' +
-//    '   </td>' +
-//    '  <td id="userTable">' +
-//    '     <label class="colorLabel" for="ubColor">User Table</label>' +
-//    '    <input id="ubColor" type="button" class="form-control pickColorClass" value="rgb(255, 128, 0)" />' +
-//    '                  </td>' +
-//    '             </tr>' +
-//    '            <tr id="fbColor" height="100px">' +
-//    '               <td>Input Area:</td><td>' +
-//    '                  <label class="colorLabel" for="ifColor">Text</label>' +
-//    '                 <input id="ifColor" type="button" class="form-control pickColorClass" value="rgb(255, 128, 0)" />' +
-//    '            </td>' +
-//    '           <td>' +
-//    '              <label class="colorLabel" for="ibColor">Background</label>' +
-//    '             <input id="ibColor" type="button" class="form-control pickColorClass" value="rgb(255, 128, 0)" />' +
-//    '        </td>' +
-//    '   </tr>' +
-//    '            </tbody>' +
-//    '       </table>' +
-//    '  </div>' +
-//    ' <div class="colorButtons">' +
-//    '    <button type="button" id="exportColors">Export</button>' +
-//    '   <button type="button" id="importColorsf">Import Local File</button>' +
-//    '   </div>' +
-//    '  </div>';
-
-//let template = '<div class="colorpicker dropdown-menu" style="z-index: 2147483647">' +
-//    '<div class="colorpicker-saturation"><i><b></b></i></div>' +
-//    '<div class="colorpicker-hue"><i></i></div>' +
-//    '<div class="colorpicker-color"><div /></div>' +
-//    '<div class="colorpicker-selectors"></div>' +
-//    '<div class="colorpicker-bar"><button type="button" class="button" id="close">Save</button></div>' +
-//    '</div>';
-
-//'<div id="colorbutton" hidden>' +
-    //'<input type="color" id="cpaColor">' +
-    //'<input type="color" id="coaColor">' +
-    //'<input type="color" id="caaColor">' +
-    //'<input type="color" id="cpbColor">' +
-    //'<input type="color" id="cubColor">' +
-    //'<input type="color" id="cibColor">' +
-    //'<input type="color" id="cifColor">' +
-    //'<input type="color" id="cbColor">' +
-    //'<input type="color" id="cfColor">' +
-    //'<input type="color" id="cfbColor">' +
-    //'<input type="color" id="cpfColor">' +
-    //'<input type="color" id="cmColor">' +
-    //'<input type="color" id="chfColor">' +
-    //'<input type="color" id="chbColor">' +
-//    '</div>' +
-
-// ---------------------------------------------------------------------------
-// Stub implementations for the legacy "bootstrap color picker" path.
-// These are called when s_useOS is false (non-OS-native color picker mode).
-// The full implementations were removed with the bootstrap dependency.
-// TODO: re-implement or permanently gate on s_useOS = true.
-// ---------------------------------------------------------------------------
-
-/**
- * Apply dark-mode styling to the chat table.
- * Stub — legacy bootstrap path. Full implementation removed with bootstrap.
- *
- * @param {boolean} on
- */
-function turnDark(on) {
-    // no-op until reimplemented
-}
-
-/**
- * Display the color-choice panel using the legacy bootstrap picker.
- * Stub — legacy bootstrap path. Full implementation removed with bootstrap.
- */
-function bootshowColorChoices() {
-    // no-op until reimplemented
-}
-
-/**
- * Apply color settings from the legacy bootstrap color picker controls.
- * Stub — legacy bootstrap path. Full implementation removed with bootstrap.
- *
- * @param {boolean} initButtons
- * @param {Object|null} optData
- */
-function setColorsfromBoot(initButtons, optData) {
-    // no-op until reimplemented
 }

@@ -497,7 +497,8 @@ function findStr(inStr) {
     let testiT = str2examineN.trim();
     if (testiT == "")
         return newMatches; //which is empty
-    for(let z = 0; z < str2examineN.length; z++) {
+    let z = 0;
+    for(; z < str2examineN.length; z++) {
         if (str2examineN[z] != " ")
             break;
     }

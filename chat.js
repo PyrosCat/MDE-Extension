@@ -353,7 +353,7 @@ function listenMessageNode(td) {
     if (compTime != null) {
         let curTime = new Date();
         //input is always a javascript date. output type can be STRING or TDATE (javascript date)
-        curTime = convert2Pacfic(curTime, "TDATE");
+        curTime = convert2Pacific(curTime, "TDATE");
         diff = curTime - compTime;
     }
 
@@ -846,7 +846,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             internalactoptset(); //removes keyboard listens for autocorrect
 
         if (chatcriteria.colorData != null || chatcriteria.yukonOnly) {
-            initColors(chatcriteria.colorData, true, chatcriteria.yukonOnly);
+            initColors(chatcriteria.colorData, chatcriteria.yukonOnly);
             s_changeColors = true;
         }
 
