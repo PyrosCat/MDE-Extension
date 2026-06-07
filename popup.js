@@ -50,43 +50,43 @@ let nl = "";
 let newSound = null;
 let wS = "";
 
-let defaultHelp = 'MDE v.1.0(05/08/2026). Change log has been moved to the FAQ section. If you find this extension helpful, please consider supporting my development efforts. Ways to do this can be found by clicking on my facebook link, top right of this menu.';
+let defaultHelp = 'MDE v.2.0.0 (05/08/2026). If you find this extension helpful, please consider supporting development efforts \u2014 click the Facebook link (top right) for ways to help.';
 let help = {
     "SHORTCUTS": "Keyboard short cuts for the task page. Hover over (?) for more info.",
     "help": "Click Me for documentation, including change log.",
-    "FEEDBACKL": "Adds desktop URL link next to QR code for SIMS and FB in the result block popup.",
-    "imageh": "Enable chat nicknames",
+    "FEEDBACKL": "Adds a clickable link in the task result block to open the task URL directly in the desktop SIM or Feedback tool.",
+    "imageh": "Show an assigned nickname next to usernames in RaterHub chat. Contact MDE support to get a nickname assigned.",
     "colorp": "For the chat color changes, use default OS color picker",
-    "SOCIALO": "Saves filter options across logon's.",
-    "SFILES": "In the social file manager, makes the URL's clickable. And puts the URL on the clipboard.",
-    "chatname": "Enter the chatname of the person you want to get an alert for, if they post in an open chat room. You must have the room open in the background.",
-    "phrase": "Enter the phrase(s)to get an alert for. You must have the chat room open in a tab. Separate phrases with a comma. To filter on an exact phrase, enclose it with double quotes.",
+    "SOCIALO": "Saves your social task filter selections so they persist across sessions.",
+    "SFILES": "Adds a file manager panel to social task pages. Makes URLs clickable and copies them to the clipboard.",
+    "chatname": "Enter the chat username(s) to watch. You'll be alerted whenever they post. Separate multiple names with a comma. The chat room must be open in a tab.",
+    "phrase": "Word or phrase to watch for in chat. Separate multiple terms with a comma. Wrap in double quotes for an exact phrase match. The chat room must be open in a tab.",
     "phrases": "Chat and Task Pages only: Enable phrase table (offers stored phrases when typing for phrases matched in task comment fields and chat).",
-    "reda": "Check this box to get an alert whenever a red posts in an open chat room.You must have the room open in the background.",
-    "SubmitReq": "Click to submit your request (to process options you have selected).",
-    "nickname": "Nicknames are turned on in chat by selecting Chat Image Display. To add or change your chat nick name, email mdipros48@gmail.com",
-    "RHRELOAD": "Raterhub re-fresh reloads raterhub.com every 2 mins and plays cha cha changes when tasks show up after a period of NRT.",
-    "RHRELOADA": "Alert when certain task types show up at the raterhub index.",
-    "RHRELOADT": "Receive a device notfication when certain events happen with the RH Index.",
-    "soundsettings": "Customize sound alerts from MDE",
+    "reda": "Trigger a visual or audio alert when the Poster alert name or Phrase alert appears in an open chat tab.",
+    "SubmitReq": "Save your current option selections.",
+    "nickname": "Your display nickname in chat. To add or change it, email mdipros48@gmail.com.",
+    "RHRELOAD": "Auto-reloads RaterHub at the interval you set. Plays an alert sound when tasks appear after a period of no tasks (NRT).",
+    "RHRELOADA": "Play an alert sound when specific task types appear on the RaterHub task index.",
+    "RHRELOADT": "Receive a device notification when certain events occur on the RaterHub index.",
+    "soundsettings": "Configure which sound plays for each MDE alert: Task Timer, Chat Alert, NRT start/end, and Task Alert.",
     //"helprh": "Alert for personalized, headphones, and U/O task types at index",
-    "helps": "Task Page - alt-j:Close right tabs alt-q:search Q alt-m(MAPQ)alt-z(scroll2Error)alt-w(skip to 'Task') alt-l(search Q with location)alt-y(YT search for Q)alt-s(playstore search for Q)Chat and Task Page:<alt>-n(add to autocorrect),<alt>-p(add to phrases)",
-    "TRACKER": "When enabled this option will help you track your work productivity",
-    "ViewTracker": "Click to view detail productivity information",
+    "helps": "Show or hide the keyboard shortcuts list.",
+    "TRACKER": "Track time spent on each task. Calculates AET usage, productivity %, and pay period totals.",
+    "ViewTracker": "Open the tracker panel to see your task history, time totals, and invoice tools.",
     "phsent": 'Phrase matching is done at the sentence level vs word level. Sentences are delineated by a "," or "." or "-" when using this option.',
-    "ViewLog": "Click to view NRT log. In order to have NRT logged you need to enable the raterhub refesh and leave a tab open on the raterhub page when you aren't working a task.",
-    "helpsp": "As you type, saved phrases will be offered. To select a phrase to be inserted, tab to the table and then hit enter. Use Alt-a to manage saved phrases on task and chat pages in the comment/typing area. To add a phrase to the table, select it and hit alt-p.",
+    "ViewLog": "View a log of NRT periods. Requires RH Refresh to be enabled with a RaterHub tab open when not working tasks.",
+    "helpsp": "As you type, matching saved phrases are offered. Tab to select, Enter to insert. Use alt-a to open the phrase manager, alt-p to save selected text as a new phrase.",
     "specI": "Import autocorrect data from text file (file created with export in this program).",
-    "actable": "View/Change/Backup/Restore autocorrect table",
-    "spell": "As you type, your custom autocorrect table will be checked and the word will be corrected if it is found in the table. Works on task pages and in the chat rooms.",
-    "spectask": "option changes are not reflected on an OPEN task tab. If you need the change to take place immediately, save your option change(s) and then refresh the open task tab.",
-    "mdefaq": "Display/Hide FAQ section",
+    "actable": "Open the autocorrect table to view, add, edit, or remove entries. You can also export and import the table.",
+    "spell": "Auto-replaces words as you type based on your saved autocorrect table. Works on task pages and in chat rooms.",
+    "spectask": "Option changes take effect on new task tabs. To apply immediately, save your changes and refresh the open task tab.",
+    "mdefaq": "Open the FAQ and change log.",
     "keyshow": "Click to show shortcuts. Click again to hide them.",
-    "actableeye": "View/Change/Backup/Restore autocorrect table",
-    "phaseDisplay": "View/Change/Backup/Restore stored phrases",
-    "phaseDisplayeye": "View/Change/Backup/Restore stored phrases",
-    "useremail": "You have to register your email address with MDE support before using this function - send an email with the address you want to use to mdipros48@gmail.com.",
-    "rhalertcontroleye": "View and control when you want to receive a text message alert. Alerts can be set for RH index changes or chat posts"
+    "actableeye": "Open the autocorrect table to view, add, edit, or remove entries.",
+    "phaseDisplay": "Open the phrase table to view, add, edit, or remove saved phrases.",
+    "phaseDisplayeye": "Open the phrase table to view, add, edit, or remove saved phrases.",
+    "useremail": "Text message alert forwarding via email — currently disabled in v2.0.0. Register your email with mdipros48@gmail.com to be ready when re-enabled.",
+    "rhalertcontroleye": "Text alert settings — currently disabled in v2.0.0."
 };
 
 let indexMsgOpts = 3;
@@ -215,6 +215,9 @@ function setTrackerOpts() {
 function setMsg(data, color) {
     $("#msgTextpop").text(data);
     $("#msgTextpop").css("color", color);
+    // Reset to collapsed state for each new message
+    $("#status-bar-body").removeClass("expanded").addClass("collapsed");
+    $("#status-toggle-btn").text("more");
 }
 
 /**
@@ -295,21 +298,20 @@ let save_message = defaultHelp;
  */
 function hoverCallback(ev) {
     let id = ev.target.id;
-    $("#msgTextpop").css("color", "black");
-    if (ev.type == "mouseenter") {
-        save_message = $("#msgTextpop").text();
-        if (help.hasOwnProperty(id)) {
-            $("#msgTextpop").text(help[id]);
-            $("#msgTextpop").css("background-color", "#98AFC7");
+    if (ev.type === "mouseenter") {
+        // Only capture the base message on first entry (not on child re-entries)
+        // to avoid the flicker where save_message resets mid-hover.
+        let current = $("#msgTextpop").text();
+        if (!$("#msgTextpop").hasClass("help-active")) {
+            save_message = current;
         }
-        else {
-            $("#msgTextpop").text("No help found");
-            $("#msgTextpop").css("background-color", "white");
+        let msg = help.hasOwnProperty(id) ? help[id] : null;
+        if (msg) {
+            $("#msgTextpop").addClass("help-active").text(msg);
         }
-    }
-    else {
-        $("#msgTextpop").text(save_message);
-        $("#msgTextpop").css("background-color", "white");
+        // If no help entry, keep whatever is showing — don't flash "No help found"
+    } else {
+        $("#msgTextpop").removeClass("help-active").text(save_message);
         save_message = defaultHelp;
     }
 }
@@ -643,6 +645,51 @@ function setupPop(inEnhancements, inPhraseArray, sounds, clearRestoreArea) {
     $('label').hover(hoverCallback);
     $('#nickname').hover(hoverCallback);
     setMsg(defaultHelp, "black");
+
+    // Status bar: initialise collapsed
+    $("#status-bar-body").addClass("collapsed");
+
+    // Quick links collapse — persist state
+    chrome.storage.local.get(["linksCollapsed"], function (result) {
+        if (result.linksCollapsed === true) {
+            $("#links").hide();
+            $("#NRTLOGMSGP").hide();
+            $("#links-toggle-btn").html("&#8964;").attr("title", "Expand links");
+            $("#links-section").addClass("links-collapsed");
+        }
+    });
+
+    $("#links-toggle-btn").click(function () {
+        let collapsed = $("#links").is(":visible");
+        if (collapsed) {
+            $("#links").slideUp(150);
+            $("#NRTLOGMSGP").hide();
+            $("#links-toggle-btn").html("&#8964;").attr("title", "Expand links");
+            $("#links-section").addClass("links-collapsed");
+        } else {
+            $("#links").slideDown(150);
+            $("#links-toggle-btn").html("&#8963;").attr("title", "Collapse links");
+            $("#links-section").removeClass("links-collapsed");
+        }
+        chrome.storage.local.set({ linksCollapsed: collapsed });
+    });
+
+    // More / less toggle
+    $("#status-toggle-btn").click(function () {
+        let body = $("#status-bar-body");
+        if (body.hasClass("collapsed")) {
+            body.removeClass("collapsed").addClass("expanded");
+            $(this).text("less");
+        } else {
+            body.removeClass("expanded").addClass("collapsed");
+            $(this).text("more");
+        }
+    });
+
+    // Dismiss — hide the whole status bar
+    $("#status-dismiss-btn").click(function () {
+        $("#popup-status-bar").slideUp(150);
+    });
     $('#rhalertcontroleye').prop("disabled", true); //disable for first release of V3
     $('#useremail').prop("disabled", true); //disable for first release of V3
 
@@ -783,7 +830,7 @@ window.addEventListener('load', function (evt) {
     //    loadTrackTestData();
     //});
 
-    $("#mdefaqwarea").hide();
+    // FAQ visibility controlled by #faq-section overlay
 
     $('#CloseLog').click(function () {
         $("#NRTLOGMSGP").hide();
@@ -802,24 +849,27 @@ window.addEventListener('load', function (evt) {
     });
 
     $('#cancelsoundsettings').click(function () {
-        //$("#sounds").attr("src", "settings.png");
         $("#soundsettings").hide();
-        $("#ssbutt").text("Sound Settings");
+        $("#ssbutt").text("Configure");
         s_initsounds(s_sounds);
         $('#savesoundsettings').hide();
     });
 
     $('#savesoundsettings').click(function () {
         $("#soundsettings").hide();
-        //$("#cancelsoundsettings").hide();
+        $("#ssbutt").text("Configure");
         s_UpdateSoundSelections();
         $('#savesoundsettings').hide();
     });
 
     $('#ssbutt').click(function () {
-        $("#soundsettings").show();
-        //$("#sounds").attr("src", "closesettings.png");
-        //    $("#cancelsoundsettings").show();
+        if ($("#soundsettings").is(":visible")) {
+            $("#soundsettings").hide();
+            $("#ssbutt").text("Configure");
+        } else {
+            $("#soundsettings").show();
+            $("#ssbutt").text("Close");
+        }
         $('#ssbutt').blur();
         $('#savesoundsettings').hide();
     });
@@ -914,22 +964,26 @@ window.addEventListener('load', function (evt) {
     });
 
     $('#mdefaq').click(function () {
-        if ($("#mdefaqwarea").is(":visible")) {
-            $("#mdefaq")[0].textContent = "Show FAQ";
-            $("#mdefaqwarea").hide();
-        }
-        else {
-            $("#mdefaqwarea").show();
-            $("#mdefaq")[0].textContent = "Hide FAQ";
-        }
+        // Show the overlay FAQ panel — no layout shift
+        let notTracker = document.getElementById('notTracker');
+        if (notTracker) notTracker.style.position = 'relative';
+        let faqPanel = document.getElementById('faq-section');
+        faqPanel.style.display = 'block';
+        faqPanel.scrollTop = 0;
+    });
+
+    $('#faq-close-btn').click(function () {
+        $('#faq-section').hide();
     });
 
 
     $('#closeTracker').click(function () {
         $("#trackersubMenu").hide();
+        $('body').removeClass('tracker-open');
         $('#trackerTable > tbody').children().remove();
         $(".blueTitle").off("hover");
         $(".blueTitle td").off("click");
+        $('body').removeClass('tracker-open');
         $("#notTracker").show();
         $("#restoreallarea").show();
         selStr = '#filterDetail option[value="none"]';
@@ -1257,7 +1311,7 @@ window.addEventListener('load', function (evt) {
                 $(el.target).addClass("changed");
             });
             $("#spellArea").prepend(table);
-            $(".wordtd").click(liClick);
+            $(".wordtd").click(popup_liClick);
             $("#spellArea").show();
             $("#autoCTitle").show();
             $("#restoreallarea").hide();
@@ -1339,7 +1393,7 @@ window.addEventListener('load', function (evt) {
                 $(el.target).addClass("changed");
             });
             $("#phraseArea").prepend(table);
-            $(".editTd").click(liClick);
+            $(".editTd").click(popup_liClick);
             $("#phraseArea").show();
             $("#autoPTitle").show();
             $("#restoreallarea").hide();
@@ -1762,7 +1816,8 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
 
     if (msg.text == "PLAYTHIS") {
         beep_pop(msg.data);
-        return;
+        sendResponse(0);
+        return true;
     }
 
     if (msg.text && (msg.text == "MDENRTLOGA")) {
@@ -1806,8 +1861,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     }
 
     if (msg.text == "SETMESSAGE") {
-        $("#msgTextpop").css("color", "black");
-        $("#msgTextpop").text(msg.message);
+        setMsg(msg.message, "black");
     }
 
     if (msg.text && (msg.text == "TRACKERLOGA")) {
@@ -1849,6 +1903,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
 
         buildTable(dataA, msg.zone, msg.invoice, getFilterConstant($("#filterDetail option:selected").val()));
 
+        $("body").addClass("tracker-open");
         $("#notTracker").hide();
         $("#restoreallarea").hide();
 
@@ -2433,6 +2488,7 @@ function buildTable(data, zone, invoice, filter) {
     $(".blueTitle").hover(shadowLine);
     $(".blueTitle td").click(detLine);
     $("#trackersubMenu").show();
+    $('body').addClass('tracker-open');
     //$('#ConfTrack').hide();
     if ($('#before').length > 0)
         $('.beforeClass').remove();
@@ -4309,6 +4365,7 @@ function openTestArea() {
             clearInterval(s_timer);
         s_timer = 0;
         $("#testArea").remove();
+        $('body').removeClass('tracker-open');
         $("#notTracker").show();
         $("#restoreallarea").show();
         $("#chatname").val("");

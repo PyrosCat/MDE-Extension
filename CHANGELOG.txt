@@ -1,0 +1,304 @@
+MDE Chrome Extension — Changelog
+=================================
+
+Versioning:  MAJOR.MINOR.PATCH
+  MAJOR  Breaking changes or complete feature overhauls
+  MINOR  New features and non-breaking improvements
+  PATCH  Bug fixes, typo corrections, test additions
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.0.1  —  2026-05-15
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Patch — three visual fixes across style.css and popup.html.  All 371 tests pass.
+
+  · Footer buttons (Backup All / Restore All / Restore Task History)
+      - popup.html: footer button group wrapped in a .footer-card div with
+        a "Backup & Restore" section label, matching the Timer Settings and
+        Data card style
+      - popup.html: divider element added between Backup All and the two
+        restore buttons to separate the primary action from secondary ones
+      - popup.html: Restore Task History button given .footer-btn--tertiary
+        class to distinguish it visually from Restore All
+      - style.css: .footer-btn--tertiary style added — transparent
+        background, lighter border, smaller icon (20px vs 24px); previously
+        Restore Task History was styled identically to Restore All
+      - style.css: #restoreallarea padding corrected from 4px 0 0 to 0;
+        footer-btn-group gap tightened from 5px to 6px for consistency
+  · Timer Settings box  (style.css)
+      - Removed duplicate legacy #afterTable { padding: 0 16px } rule that
+        was overriding the correct padding: 10px 16px 0 defined lower in
+        the file, causing the box to clip its top spacing
+  · Data section  (style.css, popup.html)
+      - style.css: .data-card block added — bordered card container
+        mirroring #savechangediv; #aftertasks padding adjusted from
+        12px 16px 16px to 10px 16px 16px and gap removed
+      - popup.html: Data section content wrapped in .data-card div with
+        the section label moved inside the card
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.0.0  —  2026-05-15
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Major — complete UI/UX redesign.  No behavioural regressions; all 371 tests pass.
+
+  Design system
+  · Introduced CSS custom property palette (--bg, --surface, --accent,
+    --green, --amber, --red, --purple, --teal, --pink); all colours now
+    driven from one canonical source
+  · Adopted DM Sans as the extension-wide typeface; replaces browser default
+  · Consistent design tokens for border-radius, spacing, and shadow
+  · Custom thin scrollbars throughout
+
+  Popup — main panel  (popup.html, style.css)
+  · Sticky header with MDE logo and FAQ / Facebook link buttons
+  · Status bar replaces plain msgTextpop paragraph; includes:
+    – Collapsible help text with more / less toggle (2-line clamp when
+      collapsed, full text when expanded)
+    – Dismiss button (x) to hide the bar entirely
+    – State persisted across popup open/close via chrome.storage.local
+  · All checkboxes replaced with custom animated toggle switches
+  · Each section given a section-label heading and consistent padding
+  · Toggle rows use flex layout with action buttons flush right
+  · Sound Settings:
+    – Table uses fixed column widths; play and reset buttons no longer
+      clipped at the right edge
+    – Configure button correctly toggles panel open and closed; label
+      switches between "Configure" and "Close"
+    – Cancel and Save both restore the button label to "Configure"
+  · Quick Links rendered as a 2-column grid with a collapse / expand
+    chevron; collapsed state persisted in chrome.storage.local
+  · Text Messaging Setup header styled as an amber "DISABLED" banner;
+    no non-ASCII characters used anywhere in CSS or HTML
+  · All non-ASCII characters in popup.html replaced with HTML entities
+
+  Productivity Tracker panel  (popup.html, style.css, popup.js)
+  · Sticky header bar with panel title and close button
+  · "This Data is for informational purposes only." rendered as a blue
+    info callout with a left-border accent bar
+  · Totals table: right-aligned time values, dimmed secondary labels,
+    rounded card container
+  · Consolidated/Device and Invoice controls restructured into two clean
+    labelled rows (was a flat wrapped flex block)
+  · Table controls split into a top row (header + filter dropdown) and
+    an AET-range radio row
+  · Timer Settings box redesigned with icon + title + hint layout for
+    each of the four settings (Task Timer, Timer display, Keep records,
+    Alert for incomplete tasks); backup options dropdown moved below the
+    number input to prevent right-edge overflow
+  · Data management section (Rebuild, Restore, Delete) given section
+    label and consistent button styling
+  · Row status colours updated to design-token values: amber (released),
+    teal (incomplete), pink (in-progress), purple (prior pay periods)
+
+  Tooltip copy  (popup.js)
+  · All 26 help[] entries rewritten for clarity, accuracy, and consistent
+    voice; removed raw task-page shortcut dumps from popup-context entries
+
+  Bug fixes (identified during UI/UX work)
+  · popup.js — liClick ReferenceError: .click() call sites still referenced
+    the old name after the 1.0.0 rename to popup_liClick; updated both
+    call sites
+  · popup.js — PLAYTHIS message handler returned bare return with no
+    sendResponse call, leaving the message port unclosed
+  · popup.js — hoverCallback fired on child element re-entries, resetting
+    save_message to defaultHelp mid-hover and flashing "No help found";
+    now guarded with a help-active class to capture save_message only
+    once per hover sequence
+  · popup.js — FAQ panel rendered as an inline block, pushing all content
+    below it down when opened; replaced with a position:absolute overlay
+  · background.js — myListener delegated to real_myListener without
+    returning true at the top level; Chrome closed the message port before
+    any async response could be sent, producing "Uncaught runtime.lastError:
+    The message port closed before a response was received" on every
+    message exchange
+  · style.css / popup.html — body width hardcoded at 340px with
+    overflow-x:hidden, clipping the Productivity Tracker panel; body now
+    gains a tracker-open class when the tracker is shown, expanding to
+    580px minimum width
+  · style.css / popup.html — defaultHelp version string displayed as
+    "MDE v.1.0(05/08/2026)" (no space before parenthesis); corrected
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1.1  —  2026-05-14
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Patch — bug fixes and typo corrections.
+Minor increment already captured in 1.1.0; test expansion in this
+release adds coverage for the functions fixed below.
+
+  utils.js
+  · Fixed: setURL(suffix, international) — international branch correctly
+    set prefix = IntlRoot, but the immediately following line
+    unconditionally reset prefix = USRoot, making the international flag
+    a no-op; international users' invoice URLs always resolved to
+    raterlabs.appen.com instead of connect.appen.com
+    Corrected to: let prefix = international ? IntlRoot : USRoot
+  · Fixed: NRTLogCleanup(logData) returned newlogData only when records
+    were pruned; on days with no prunable records the function fell
+    through and returned undefined, causing a TypeError at the call site
+    (nrtRecs.push()) and silently preventing the NRT log storage write
+    Corrected to unconditionally return newlogData
+
+  dates.js  /  chat.js  /  popup.js  /  tests/mde.test.js
+  · Fixed: function name typo convert2Pacfic (missing 'i') renamed to
+    convert2Pacific across all 8 references (1 definition, 7 call sites)
+
+  phrases.js
+  · Fixed: variable z declared as let z inside the for loop initialiser
+    but read outside the loop body on the next line; block-scoping caused
+    a ReferenceError in strict mode and the Node vm sandbox
+    Corrected by hoisting: let z = 0 before the loop
+
+  manifest.json
+  · Fixed: connect.appen.com (international invoice portal) absent from
+    host_permissions — Chrome MV3 would silently block international
+    invoice requests; added three invoice path entries
+  · Fixed: web_accessible_resources for invoice.js only matched
+    raterlabs.appen.com and raterhub.com — international users on
+    connect.appen.com received a Chrome security error on popup load;
+    added https://connect.appen.com/*
+
+  tests/mde.test.js  (285 to 371 tests, 0 failures)
+  · Added 86 new tests across utils.js, dates.js, invoice.js,
+    socialut.js, background.js, popup.js, and phrases.js
+  · New functions covered: isAlphaNumeric, msgStrGet,
+    GetLogStatus / setLogStatus, resetAlert4Context, NRTLogCleanup
+    (including regression for the bug fixed above), updateSpellA,
+    convert2Pacific (return type and DST boundary cases), badDate,
+    readTextDocument, decodeName, validDateRec, urlIsnotTask,
+    removetStar, buildChatTextAlertsArray, trackCleanup, oneSelected,
+    updateThisday, platform2thisComputer, makeComputerNameShort,
+    getFilterConstant, s_getsound, processTotalLine, buildTotalCLine,
+    wordfindStr, findStr, getFirstRow
+  · Established vm sandbox pattern for browser-global files:
+    background.js, popup.js, phrases.js, socialut.js loaded via
+    vm.runInNewContext with shimmed chrome, document, $, and window
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1.0  —  2026-05-09 to 2026-05-13
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Minor — new capabilities added: unit test suite and static analysis
+baseline established.  Latent bugs fixed across 5 files.
+No behaviour visible to end users changed.
+
+  chat-colors.js  /  chat.js
+  · Audited the entire color-picker code path against the live call graph.
+    Three functions — turnDark, bootshowColorChoices, and setColorsfromBoot
+    — were confirmed permanently unreachable: the sole initColors call site
+    in chat.js hardcodes useOS = true, leaving the bootstrap branch dead.
+  · Removed: colors() dead function and the s_useOS variable
+  · Removed: unreachable if/else branches in showColorChoices() and
+    processColorFile(); both now call showColorChoicesOS() directly
+  · Reduced: initColors signature from 3 arguments to 2 (useOS removed);
+    call site in chat.js updated accordingly
+  · Removed: 277 lines of commented-out bootstrap graveyard at the bottom
+    of chat-colors.js — legacy bootcolorWheelHTML, template string, and
+    old function bodies that had accumulated over multiple prior revisions
+  · Net reduction: chat-colors.js -330 lines
+
+  popup.js
+  · Fixed: remaining implicit globals missed in the initial 1.0.0 pass —
+    variables assigned inside functions without a preceding declaration,
+    which would silently create properties on the global object and risk
+    cross-function data corruption
+  · Same-name function conflicts resolved; all functions now have unique
+    identifiers across the entire codebase
+
+  dates.js
+  · Fixed: DST boundary calculation error in the Pacific timezone
+    conversion logic; times falling on daylight saving transition hours
+    were converted using the wrong UTC offset
+
+  tickets.js  /  home.js
+  · Fixed: recursive retry loops in the network request handlers had no
+    base case under certain failure conditions; a network error or
+    unexpected server response would cause the functions to call
+    themselves indefinitely, eventually crashing the service worker
+
+  utils.js
+  · Fixed: s_isValidChromeRuntime referenced a stale internal prefix
+    left over from the LFH-era codebase; the check would always evaluate
+    against the wrong identifier and never correctly detect an invalid
+    runtime context
+
+  background.js
+  · Fixed: orphaned updateUser() call in the message handler referenced
+    a function that no longer existed after the 1.0.0 cleanup; any
+    message path that reached this call would throw a ReferenceError and
+    silently fail
+
+  All JS files — static analysis
+  · Ran node --check across all 29 JS files; resolved every parse error
+    and syntax warning found; all 29 files now pass with zero errors
+  · This establishes a baseline that can be checked automatically on
+    every future change before packaging
+
+  All JS files — test infrastructure  (0 to 285 tests)
+  · Created tests/ directory and tests/mde.test.js using Node's built-in
+    vm module; no external dependencies required to run the suite
+  · Wrote 285 unit tests covering pure functions across the codebase;
+    all 285 pass with 0 failures
+  · Established a vm sandbox pattern for files that reference browser
+    globals (chrome, document, $, window) — each file loaded via
+    vm.runInNewContext with hand-written shims so the functions can be
+    exercised in a pure Node environment without a browser
+  · Functions covered in this initial pass span utils.js, dates.js,
+    background.js, popup.js, phrases.js, and socialut.js
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.0.0  —  2026-05-08
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Major — project recovery and re-release under new ownership.
+
+  The extension was inherited in an unmaintained state after the original
+  developer became unreachable.  The codebase was functional but carried
+  significant technical debt accumulated over its prior development history:
+  the original branding was intact but tied to infrastructure no longer in
+  use, and the code had never been subjected to a systematic quality review.
+
+  This release represents the minimum necessary to establish a clean,
+  documented, and correctly branded foundation to build on.
+
+  Ownership and identity
+  · Extension renamed from LFH to MDE across all user-visible surfaces:
+    popup title, status messages, storage keys, and support contact
+  · All source files renamed to kebab-case for consistency
+  · Support contact updated to mdipros48@gmail.com
+  · Facebook community page established for user communication
+
+  Infrastructure cleanup
+  · SMS backend removed — the third-party service it depended on is no
+    longer available; the feature is preserved in the UI as disabled,
+    pending a replacement implementation
+  · Orphaned files with no remaining references removed from the package
+  · All storage keys migrated to the new namespace without data loss
+
+  Code modernisation  (29 JS files, ~7,000 lines affected)
+  · Removed approximately 370 console.log statements that had been left
+    in place from development and were exposing internal state in
+    production builds
+  · Converted all var declarations to let across every JS file;
+    var's function-scoping had been the source of several subtle bugs
+    and makes the code significantly harder to reason about
+  · Identified and corrected 35 implicit global variable assignments
+    across 12 files — variables written without a declaration silently
+    become properties on the global window object, creating potential
+    for unexpected cross-script interference in the extension's
+    multi-context execution environment
+  · Removed approximately 700 lines of dead code: unreachable branches,
+    commented-out blocks, and functions with no remaining call sites
+  · Resolved all same-name function conflicts; each function now has a
+    unique, unambiguous identifier across the entire codebase
+  · Added JSDoc documentation to all 390 functions, establishing a
+    consistent reference for anyone working on the codebase going forward
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Roadmap
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  2.1.0   Re-enable text message / email alert forwarding feature
+  2.x.x   Browser-environment test suite (Playwright or Chrome extension
+          harness) for DOM-dependent functions currently untestable in Node
+  3.0.0   Refactor all content scripts from global-scope to ES modules
+          (import / export); prerequisite for tree-shaking and stricter
+          isolation between injected scripts

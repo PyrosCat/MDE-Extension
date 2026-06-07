@@ -1142,6 +1142,11 @@ function myListener(request, sender, sendResponse) {
     else { //load context
         readContext(false, request, sender, sendResponse)
     }
+    // Must return true unconditionally so Chrome keeps the message port open
+    // for whichever async branch (real_myListener or readContext) eventually
+    // calls sendResponse.  Without this the port closes immediately and
+    // sendResponse throws "message port closed before a response was received".
+    return true;
 }
 // listener main
 /**
