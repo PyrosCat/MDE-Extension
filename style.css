@@ -330,8 +330,8 @@ textarea { width: 100%; resize: vertical; min-height: 60px; font-size: 11px; }
 .aetrangeradios { margin-left: 6px; }
 
 /* Tracker table */
-#trackertablediv { margin: 8px 16px 0; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; width: calc(100% - 32px); }
-.tableClass { display: block; overflow: auto; white-space: nowrap; min-width: 460px; max-height: 320px; width: 100%; }
+/* #trackertablediv — canonical rule is in the tracker table container section below */
+/* .tableClass — canonical rule in the tracker table container section below */
 .tableClass thead tr { background: var(--surface2); }
 .tableClass th { padding: 7px 10px; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text3); border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface2); }
 .tableClass td { padding: 7px 10px; font-size: 12px; border-bottom: 0.5px solid var(--border); color: var(--text); }
@@ -737,6 +737,20 @@ textarea { width: 100%; resize: vertical; min-height: 60px; font-size: 11px; }
   width: calc(100% - 32px);
 }
 
+/* With display:block the table doesn't auto-stretch; force full width and
+   make thead/tbody fill the scrollable area so headers always span the box */
+.tableClass {
+  display: block;
+  overflow: auto;
+  white-space: nowrap;
+  min-width: 460px;
+  max-height: 320px;
+  width: 100%;
+}
+.tableClass thead,
+.tableClass tbody { display: table; width: 100%; table-layout: fixed; }
+.tableClass thead { min-width: 460px; }
+.tableClass tbody { min-width: 460px; }
 /* ── Legend ──────────────────────────────────────────────────────────────── */
 
 #legend {

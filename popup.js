@@ -2251,8 +2251,8 @@ function buildTable(data, zone, invoice, filter) {
         //hide pacific and filter
         $("#normalTableHeader").hide();
     }
-    table.find('thead').append('<tr><td>Date</td><td>Task(s)</td><td title="AET for released tasks is set to time worked on the task.">AET(*)</td><td>WorkTime</td><td>Surplus</td>' +
-        '<td title="(AET/Time worked)*100)" id="detdesc">Productivity %</td><td>Total AET</td></tr>');
+    table.find('thead').append('<tr><th>Date</th><th>Task(s)</th><th title="AET for released tasks is set to time worked on the task.">AET(*)</th><th>WorkTime</th><th>Surplus</th>' +
+        '<th title="(AET/Time worked)*100)" id="detdesc">Productivity %</th><th>Total AET</th></tr>');
     $(".blueTitle").off("hover");
     $(".blueTitle td").off("click");
 
@@ -2498,7 +2498,10 @@ function buildTable(data, zone, invoice, filter) {
     $("#clearTrack").after(strbefore);
 
     //$('#aftertasks').show();
-    document.getElementById("trackerTable").scrollIntoView();
+    var trackerTable = document.getElementById("trackerTable");
+    trackerTable.scrollTop = 0;
+    trackerTable.scrollLeft = 0;
+    trackerTable.scrollIntoView();
 }
 
 

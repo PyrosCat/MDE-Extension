@@ -8,6 +8,25 @@ Versioning:  MAJOR.MINOR.PATCH
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.0.2  —  2026-05-16
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Patch — two Productivity Tracker visual fixes.  All 371 tests pass.
+
+  · Tracker table scroll position
+      - Table scrollTop and scrollLeft are now reset to 0 each time the
+        tracker opens, so the view always starts at row 1 / column 1
+      - Previously the scroll position was retained from the last visit
+  · Tracker detail header row ("Date Task(s) AET(*) WorkTime …")
+      - Header cells were built with <td> elements instead of <th>;
+        changed to <th> so they receive the sticky + uppercase styling
+        and stretch to fill the full width of the table box
+      - Also removed duplicate legacy #trackertablediv and .tableClass
+        CSS rules that were conflicting with the canonical block, and
+        added display:table width:100% to thead/tbody so the header
+        always spans the container even when the table is narrower
+        than the scroll box
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 2.0.1  —  2026-05-15
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Patch — three visual fixes across style.css and popup.html.  All 371 tests pass.
