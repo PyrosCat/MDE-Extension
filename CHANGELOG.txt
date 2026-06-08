@@ -8,6 +8,28 @@ Versioning:  MAJOR.MINOR.PATCH
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.0.3  —  2026-06-07
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Patch — fix style.css body rule leaking onto host pages.  All 371 tests pass.
+
+  · Root cause: style.css is injected as a content script into every
+    matched host page (RaterHub, Appen, etc.). It contained a bare
+    body { width: 340px } rule which Chrome applied to the host page's
+    own body element, visually breaking page layout. Confirmed via
+    DevTools — the injected stylesheet was visible in the Styles panel
+    on the RaterHub body element.
+  · Fix: extracted the two popup-only body rules from style.css into a
+    new popup.css file:
+      - body { width: 340px; overflow-x: visible; font-family: ...; }
+      - body.tracker-open { width: auto; min-width: 580px; }
+  · popup.css is referenced only from popup.html via a <link> tag and
+    is not listed in any content_scripts entry in manifest.json, so it
+    is never injected into host pages
+  · style.css retains all shared/content-script-safe rules; the two
+    body rules are replaced with a comment pointing to popup.css
+  · manifest.json unchanged — no new permissions or matches
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 2.0.2  —  2026-05-16
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Patch — two Productivity Tracker visual fixes.  All 371 tests pass.

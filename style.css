@@ -39,22 +39,8 @@
   --radius-lg:   12px;
 }
 
-body {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 13px;
-  color: var(--text);
-  background: var(--bg);
-  /* Width is controlled per-panel: 340px for popup, auto for tracker.
-     overflow-x must NOT be hidden — it clips the tracker table. */
-  width: 340px;
-  overflow-x: visible;
-}
-
-/* Tracker panel makes the body expand to fit */
-body.tracker-open {
-  width: auto;
-  min-width: 580px;
-}
+/* body width/layout rules are in popup.css — scoped to popup.html only.
+   Putting them here caused width:340px to bleed onto RaterHub page body. */
 
 b, strong { font-weight: 600; }
 a { color: var(--accent); text-decoration: none; }

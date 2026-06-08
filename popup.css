@@ -1,0 +1,23 @@
+/* ── MDE popup.css ────────────────────────────────────────────────────────────
+   Popup-only layout rules. This file is referenced exclusively from
+   popup.html and is NOT injected as a content script, so these rules
+   cannot bleed onto host pages (RaterHub, Appen, etc.).
+
+   The body width/tracker-open rules previously lived in style.css, which
+   IS injected as a content script, causing width:340px to appear on the
+   RaterHub page body element. Moving them here fixes that leak.        */
+
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  width: 340px;
+  overflow-x: visible;
+}
+
+/* Tracker panel makes the body expand to fit */
+body.tracker-open {
+  width: auto;
+  min-width: 580px;
+}
