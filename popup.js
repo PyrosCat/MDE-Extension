@@ -3580,13 +3580,19 @@ function buildConsolidated(dataA, periodArray) {
     });
 
     //totals the totals for invoice
+    // Declared at outer scope so week1, week2, and period-total rows all share them
+    let calc = 0;
+    let diff = 0;
+    let diffStr = "0:0:00";
+    let diffClass = 'greentd';
+
     if (week1Totalw > 0) {
         let week1end = new Date(period.start2week.subDays(1));
         if (week1Totalra > 0) {
-            let calc = ((week1Totalra * 60000) / week1Totalw) * 100;
-            let diff = (week1Totalra * 60000) - week1Totalw;
-            let diffStr = millisToHoursMinutesAndSeconds(diff);
-            let diffClass = 'greentd';
+            calc = ((week1Totalra * 60000) / week1Totalw) * 100;
+            diff = (week1Totalra * 60000) - week1Totalw;
+            diffStr = millisToHoursMinutesAndSeconds(diff);
+            diffClass = 'greentd';
             if (diff < 0) {
                 if (diffStr != "0:0:00") {
                     diffClass = 'redtdd';
