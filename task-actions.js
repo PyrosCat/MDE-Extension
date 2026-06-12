@@ -680,8 +680,8 @@ if (document.URL.indexOf("taskIds=") > -1 && isErrorTaskPage() == false) {
                                 let newTime = newAET.split(" - ");
                                 if (msg.data.aetrange == "HIGH")
                                     newAET = newTime[1];
-                                //else if (msg.data.aetrange == "LOW")
-                                //    newAET = newTime[0];
+                                else if (msg.data.aetrange == "LOW")
+                                    newAET = newTime[0];
                                 else if (msg.data.aetrange == "MID") {
                                     let numl = parseFloat(newTime[0]);
                                     let numh = parseFloat(newTime[1]);
@@ -689,9 +689,6 @@ if (document.URL.indexOf("taskIds=") > -1 && isErrorTaskPage() == false) {
                                     let num = numl + (diff / 2);
                                     newAET = num.toString();
                                     //end check for mid point
-                                }
-                                else if (msg.data.aetrange == "REAL") {
-                                    newAET = s_rememberAET;
                                 }
                             }
                             startTimer(newAET);
@@ -710,8 +707,8 @@ if (document.URL.indexOf("taskIds=") > -1 && isErrorTaskPage() == false) {
                                 let newTime = newAET.split(" - ");
                                 if (msg.data.aetrange == "HIGH")
                                     newAET = newTime[1];
-                                //else if (msg.data.aetrange == "LOW")
-                                //    newAET = newTime[0];
+                                else if (msg.data.aetrange == "LOW")
+                                    newAET = newTime[0];
                                 else if (msg.data.aetrange == "MID") {
                                     let numl = parseFloat(newTime[0]);
                                     let numh = parseFloat(newTime[1]);

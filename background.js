@@ -2656,7 +2656,7 @@ function getDeviceNum(func2Call) {
             if (data.MDECData != null)
                 detControlObj = JSON.parse(data.MDECData);
             thisComputer.number = detControlObj.nextNum;
-            thisComputer.desc = navigator.appVersion; //v3
+            thisComputer.desc = 'Console 1'; //v3 — default name for new device registrations
             local_func2Call(thisComputer);
             detControlObj.nextNum += 1;
             saveCData(detControlObj);

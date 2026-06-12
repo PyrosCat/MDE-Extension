@@ -8,6 +8,91 @@ Versioning:  MAJOR.MINOR.PATCH
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1.0  —  2026-06-08
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Minor — Productivity Tracker column overhaul, new features, and bug fixes.
+372 tests pass (1 new test added).
+
+  NEW FEATURES
+
+  · Tracker — Date/Time column split
+      - dateofTask cell split into two columns: Date and Time.
+      - Time column is hidden by default; revealed only when a date row is
+        expanded to show task detail. Popup widens automatically (640 px)
+        on expand and returns to base width (480 px) on collapse or close.
+      - Popup width class det-expanded-wide added to body on expand,
+        removed on collapse or X close. #trackersubMenu min-width removed
+        (redundant — body controls Chrome popup window size).
+      - All row types (summary, total, detail) padded to 7 columns so
+        nth-child alignment is consistent throughout.
+
+  · Tracker — drag-to-resize columns
+      - initTrackerColResize() attaches a 5 px drag handle to the right
+        edge of each <th>. Dragging syncs both the header column width and
+        every corresponding <td> in the tbody (required because thead and
+        tbody are separate display:table contexts).
+      - Re-runs on row expand so the Time column header also gets a handle.
+      - Min column width clamped at 40 px.
+
+  · Tracker — AET range format overhaul (utils.js — convertAET)
+      - "REAL" range renamed to "LOW" across all files (popup.js,
+        popup.html, task-actions.js, utils.js).
+      - LOW: shows full range label with time from low end: "3 - 4(03:00)".
+      - HIGH: shows full range label with time from high end: "3 - 4(04:00)".
+      - MID: averages the range: "3.5(03:30)".
+      - Trailing .0 on seconds removed for cleaner display (e.g. "04:48"
+        not "04:48.0"). Applies to convertAET and mills2AETfromWork.
+      - LOW branches uncommented and activated in processAET,
+        processAETnFloat, processdetrecAET, and task-actions.js.
+
+  · popup.js — MDE_VERSION constant
+      - Single constant at top of file; defaultHelp banner built from it.
+      - Update only MDE_VERSION on future releases.
+
+  BUG FIXES
+
+  · Tracker — scroll position on open
+      - trackerTable.scrollIntoView() was scrolling the popup window to
+        mid-page on every tracker open. Removed; scrollTop/scrollLeft = 0
+        reset was already correct.
+
+  · Tracker — column widths rebalanced
+      - Date reduced (was oversized), Task/AET/WorkTime/Surplus grown to
+        fit real content at 12 px DM Sans. Last column min-width set to
+        120 px to accommodate "Task Description" label without clipping.
+
+  · Tracker — task ID hover tooltip
+      - Task <td> in detail rows gets a title attribute set to the full
+        objRec.taskId so hovering shows the complete ID when truncated.
+
+  · Tracker — "Task Description" header split background
+      - Two causes fixed: (1) popup was 32 px too narrow when Time column
+        was visible, clipping the last <th> background; resolved by
+        dynamic width (480 px collapsed / 640 px expanded). (2) the
+        col-resize-handle z-index was creating a stacking context on the
+        sticky <th>, fragmenting background paint; fixed by removing
+        z-index and adding background: inherit to the handle.
+
+  · Tracker — Surplus column alignment
+      - Removed align="right" HTML attribute from all three surplus <td>
+        instances; alignment now consistent with WorkTime column.
+
+  · Tracker — vertical alignment
+      - Added vertical-align: top to .tableClass td so detail row cells
+        pin to the top of their row rather than baseline-aligning.
+
+  · background.js — getDeviceNum()
+      - Default device name changed from navigator.appVersion ("5.0
+        (Windows...)") to "Console 1".
+
+  · popup.js — closeTracker
+      - Clicking X while a row is expanded now removes det-expanded and
+        det-expanded-wide so the popup returns to collapsed width.
+
+  · manifest.json — version field bumped to 2.1.0.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 2.0.4  —  2026-06-08
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Patch — fix ReferenceError: diffClass is not defined in buildConsolidated.
@@ -359,7 +444,7 @@ Major — project recovery and re-release under new ownership.
 Roadmap
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  2.1.0   Re-enable text message / email alert forwarding feature
+  2.2.0   Re-enable text message / email alert forwarding feature
   2.x.x   Browser-environment test suite (Playwright or Chrome extension
           harness) for DOM-dependent functions currently untestable in Node
   3.0.0   Refactor all content scripts from global-scope to ES modules

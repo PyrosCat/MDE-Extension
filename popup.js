@@ -50,7 +50,11 @@ let nl = "";
 let newSound = null;
 let wS = "";
 
-let defaultHelp = 'MDE v.2.0.0 (05/08/2026). If you find this extension helpful, please consider supporting development efforts \u2014 click the Facebook link (top right) for ways to help.';
+/** Single source of truth for the displayed version string.
+ *  Update this whenever the extension version changes. */
+const MDE_VERSION = '2.1.0 (06/08/2026)';
+
+let defaultHelp = 'MDE v.' + MDE_VERSION + '. If you find this extension helpful, please consider supporting development efforts \u2014 click the Facebook link (top right) for ways to help.';
 let help = {
     "SHORTCUTS": "Keyboard short cuts for the task page. Hover over (?) for more info.",
     "help": "Click Me for documentation, including change log.",
@@ -520,8 +524,8 @@ function setupPop(inEnhancements, inPhraseArray, sounds, clearRestoreArea) {
                 $("#highaetrange").prop("checked", true);
             if (enhancements[i][indexData].aetrange == "MID")
                 $("#midaetrange").prop("checked", true);
-            if (enhancements[i][indexData].aetrange == "REAL")
-                $("#realaetrange").prop("checked", true);
+            if (enhancements[i][indexData].aetrange == "LOW")
+                $("#lowaetrange").prop("checked", true);
             if (enhancements[i][indexData].timeropts == "NEW")
                 $('#newtasktimer').prop("checked", true);
             if (enhancements[i][indexData].timeropts == "OLD")
@@ -979,11 +983,11 @@ window.addEventListener('load', function (evt) {
 
     $('#closeTracker').click(function () {
         $("#trackersubMenu").hide();
-        $('body').removeClass('tracker-open');
+        $('body').removeClass('tracker-open det-expanded-wide');
+        $("#trackerTable").removeClass("det-expanded");
         $('#trackerTable > tbody').children().remove();
         $(".blueTitle").off("hover");
         $(".blueTitle td").off("click");
-        $('body').removeClass('tracker-open');
         $("#notTracker").show();
         $("#restoreallarea").show();
         selStr = '#filterDetail option[value="none"]';
@@ -2251,8 +2255,8 @@ function buildTable(data, zone, invoice, filter) {
         //hide pacific and filter
         $("#normalTableHeader").hide();
     }
-    table.find('thead').append('<tr><th>Date</th><th>Task(s)</th><th title="AET for released tasks is set to time worked on the task.">AET(*)</th><th>WorkTime</th><th>Surplus</th>' +
-        '<th title="(AET/Time worked)*100)" id="detdesc">Productivity %</th><th>Total AET</th></tr>');
+    table.find('thead').append('<tr><th>Date</th><th class="det-time-col">Time</th><th>Task(s)</th><th title="AET for released tasks is set to time worked on the task.">AET(*)</th><th>WorkTime</th><th>Surplus</th>' +
+        '<th title="(AET/Time worked)*100)" id="detdesc">Productivity %</th></tr>');
     $(".blueTitle").off("hover");
     $(".blueTitle td").off("click");
 
@@ -2501,7 +2505,8 @@ function buildTable(data, zone, invoice, filter) {
     var trackerTable = document.getElementById("trackerTable");
     trackerTable.scrollTop = 0;
     trackerTable.scrollLeft = 0;
-    trackerTable.scrollIntoView();
+    // scrollIntoView() was scrolling the popup window itself to mid-page — removed.
+    initTrackerColResize();
 }
 
 
@@ -2518,8 +2523,8 @@ function processdetrecAET(taskAET) {
         let newTime = taskAET.split(" - ");
         if (aetrange == "HIGH")
             newAET = newTime[1];
-        //else if (aetrange == "LOW")
-        //    newAET = newTime[0];
+        else if (aetrange == "LOW")
+            newAET = newTime[0];
         else if (aetrange == "MID") {
             let numl = parseFloat(newTime[0]);
             let numh = parseFloat(newTime[1]);
@@ -2618,12 +2623,62 @@ function processTotalLine(totalAET, totalTime, lastDate, totalTaskCount, current
     }
 
     let trt = '<tr title="Click on a row to view detail. Click again to collapse detail." class="' +
-        rowClass + '"><td id="date" class="' + workClass + '">' + lastDate + '</td><td>' + totalTaskCount + '</td><td id="curaetstr" class="aethover">' + aetStr + '<input id="trueaetstr" type="hidden" value="' + trueaetstr + '">' +
+        rowClass + '"><td id="date" class="' + workClass + '">' + lastDate + '</td><td class="det-time-col"></td><td>' + totalTaskCount + '</td><td id="curaetstr" class="aethover">' + aetStr + '<input id="trueaetstr" type="hidden" value="' + trueaetstr + '">' +
         '</td><td class="' + workClass + '">' + '<input id="work" name="work" type="hidden" value="' + totalTime + '">'
-        + millisToHoursMinutesAndSeconds(totalTime) + '</td><td id="surplus" class="' + diffClass + '" align="right">' + diffStr + '</td><td>' +
+        + millisToHoursMinutesAndSeconds(totalTime) + '</td><td id="surplus" class="' + diffClass + '">' + diffStr + '</td><td>' +
         //    calc.toFixed(2) + ' % ' + suggestStr + '</td ></tr > ';
         calc.toFixed(2) + ' %</td></tr> ';
     return trt;
+}
+
+/**
+ * Enable drag-to-resize on tracker table column headers.
+ * Attaches a mousedown listener to each <th>; dragging the right edge
+ * of a header resizes that column. No CSS resize property is used
+ * (avoids the browser diagonal-handle artefact).
+ */
+function initTrackerColResize() {
+    let table = document.getElementById('trackerTable');
+    if (!table) return;
+    let ths = Array.from(table.querySelectorAll('thead th'));
+
+    ths.forEach(function (th, colIdx) {
+        // Remove any previously attached resize handle to avoid duplicates
+        let existing = th.querySelector('.col-resize-handle');
+        if (existing) th.removeChild(existing);
+
+        let handle = document.createElement('div');
+        handle.className = 'col-resize-handle';
+        th.appendChild(handle);
+
+        handle.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            let startX = e.pageX;
+            let startW = th.offsetWidth;
+
+            function onMove(e) {
+                let newW = Math.max(40, startW + (e.pageX - startX));
+
+                // Set width on the <th> itself
+                th.style.width = newW + 'px';
+
+                // thead and tbody are separate display:table contexts so
+                // setting th.style.width alone does not resize body cells.
+                // Explicitly sync every td in this column position as well.
+                let nth = colIdx + 1;
+                let tds = table.querySelectorAll('tbody tr td:nth-child(' + nth + ')');
+                tds.forEach(function (td) { td.style.width = newW + 'px'; });
+            }
+
+            function onUp() {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+            }
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+    });
 }
 
 /**
@@ -2647,6 +2702,8 @@ function detLine(ev) {
         let oldDate = new Date(dets[0].children[0].textContent);
         if (justDateEqual(oldDate, curDate)) {
             $(".detRec").remove();
+            $("#trackerTable").removeClass("det-expanded");
+            $("body").removeClass("det-expanded-wide");
             return;
         }
         else
@@ -2743,13 +2800,23 @@ function detLine(ev) {
                 displayId = displayId.substr(0, 10);
             }
 
-            let newStr = '<tr class="' + rowClass + '"><td id="datestr">' + objRec.dateofTask +
-                '</td><td class="task">' + displayId + addStar +
+            // Split "M/D/YYYY H:MM:SS AM/PM" into date and time parts
+            let dateofTaskStr = String(objRec.dateofTask);
+            let dateofTaskParts = dateofTaskStr.split(' ');
+            let datePart = dateofTaskParts[0] || dateofTaskStr;
+            let timePart = dateofTaskParts.slice(1).join(' ') || '';
+
+            let newStr = '<tr class="' + rowClass + '">' +
+                '<td id="datestr" class="det-date">' + datePart + '</td>' +
+                '<td class="det-time">' + timePart + '</td>' +
+                '<td class="task" title="' + objRec.taskId + '">' + displayId + addStar +
                 '<input id="realtaskId" name="realtaskId" type="hidden" value="' + objRec.taskId + '">' +
-                '</td>' + '<td id="taskAET" class="taskaetclass">' + displayAET + '<input id="tasktrueaet" type="hidden" value="' + displaytrueAET + '"></td>' +
-                '</td><td  input type="text" id="workTime" class="' + workClass + '"><div contenteditable>' + tempWork +
-                '</div></td><td id="surplus" align="right">' + surplus +
-                "</td><td>" + objRec.extras + '</td></tr>';
+                '</td>' +
+                '<td id="taskAET" class="taskaetclass">' + displayAET + '<input id="tasktrueaet" type="hidden" value="' + displaytrueAET + '"></td>' +
+                '<td input type="text" id="workTime" class="' + workClass + '"><div contenteditable>' + tempWork + '</div></td>' +
+                '<td id="surplus">' + surplus + '</td>' +
+                '<td>' + objRec.extras + '</td>' +
+                '</tr>';
             $(curRow).after(newStr);
         }
 
@@ -2762,8 +2829,9 @@ function detLine(ev) {
         $(".redtdnogrey").click(dataclick);
         $(".greentdnogrey").click(dataclick);
         $("#detdesc").text("Task Description");
-
-        //document.getElementById("trackerTable").scrollIntoView();
+        $("#trackerTable").addClass("det-expanded");
+        $("body").addClass("det-expanded-wide");
+        initTrackerColResize(); // re-attach handles now that Time column is visible
     });
 }
 //here - add graphic that shows it's running (because its really slow)
@@ -3706,7 +3774,7 @@ function processConslidateDetail(el) {
                     let newStr = '<tr class="' + rowClass + '"><td>' + platformNumDet + rec.date +
                         platformDesc + thisComputer.desc + '</td><td>' + platformDescDet + displayAET +
                         '</td><td>' + tempWork +
-                        '</td><td id="surplus" align="right" class="' + workClass + '">' + surplus +
+                        '</td><td id="surplus" class="' + workClass + '">' + surplus +
                         '</td></tr>';
                     $(curRow).after(newStr);
                 }
@@ -3827,7 +3895,8 @@ function buildTotalCLine(totalAET, totalTime, totalTaskCount, d, current) {
     //if week is not this week, make it another color
 
     let trs = '<tr title="Click on a row to view detail. Click again to collapse detail." class="blueTitle">' +
-        '<td class="' + workClass + '" id="sdate" >' + indateStr + "Total for " + d + '(' + dayofwktoStr(d) + ')</td > ' +
+        '<td class="' + workClass + '" id="sdate" >' + indateStr + "Total for " + d + '(' + dayofwktoStr(d) + ')</td>' +
+        '<td class="det-time-col"></td>' +
         '<td class="greentd">' + totalTaskCount + '</td>' +
         '<td class="greentd">' + inaetStr + aetStr + '</td>' +
         '<td class="greentd">' + inworkStr + millisToHoursMinutesAndSeconds(totalTime) + '</td>' +
@@ -4374,13 +4443,12 @@ function openTestArea() {
             clearInterval(s_timer);
         s_timer = 0;
         $("#testArea").remove();
-        $('body').removeClass('tracker-open');
+        $('body').removeClass('tracker-open det-expanded-wide');
+        $("#trackerTable").removeClass("det-expanded");
         $("#notTracker").show();
         $("#restoreallarea").show();
         $("#chatname").val("");
     });
-
-    //start timer 
     s_timer = setInterval(checkCommand, 1000);
     $("#notTracker").hide();
     $("#restoreallarea").hide();

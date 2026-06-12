@@ -281,7 +281,6 @@ textarea { width: 100%; resize: vertical; min-height: 60px; font-size: 11px; }
 #trackersubMenu {
   padding: 0 0 16px;
   width: auto;
-  min-width: 580px;
   position: relative;
   box-sizing: border-box;
 }
@@ -318,10 +317,39 @@ textarea { width: 100%; resize: vertical; min-height: 60px; font-size: 11px; }
 /* Tracker table */
 /* #trackertablediv — canonical rule is in the tracker table container section below */
 /* .tableClass — canonical rule in the tracker table container section below */
-.tableClass thead tr { background: var(--surface2); }
+.tableClass thead tr { background: var(--surface2); width: 100%; }
 .tableClass th { padding: 7px 10px; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text3); border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface2); }
-.tableClass td { padding: 7px 10px; font-size: 12px; border-bottom: 0.5px solid var(--border); color: var(--text); }
+.tableClass td { padding: 7px 10px; font-size: 12px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: top; }
 .tableClass tr:last-child td { border-bottom: none; }
+
+/* ── Tracker column widths (8 cols: Date | Time | Task | AET | WorkTime | Surplus | Productivity | TotalAET) ── */
+/* Headers are resizable so the user can adjust any column width by dragging */
+/* ── Tracker column widths (7 cols: Date | Time* | Task(s) | AET | WorkTime | Surplus | Productivity%) ──
+   Time column (*) is hidden until a date row is expanded — it only appears in detRec rows.
+   All th widths apply because thead uses table-layout:fixed via .tableClass thead rule.
+   Widths sized to content at 12px DM Sans + 20px horizontal padding.                       */
+.tableClass th:nth-child(1), .tableClass td:nth-child(1) { width: 72px;  min-width: 60px;  white-space: nowrap; }
+.tableClass th:nth-child(2), .tableClass td:nth-child(2) { width: 0;     min-width: 0;  padding: 0; overflow: hidden; border: none; }
+.tableClass th:nth-child(3), .tableClass td:nth-child(3) { width: 90px;  min-width: 72px; white-space: nowrap; }
+.tableClass th:nth-child(4), .tableClass td:nth-child(4) { width: 76px;  min-width: 60px; }
+.tableClass th:nth-child(5), .tableClass td:nth-child(5) { width: 76px;  min-width: 60px; }
+.tableClass th:nth-child(6), .tableClass td:nth-child(6) { width: 64px;  min-width: 48px; }
+.tableClass th:nth-child(7), .tableClass td:nth-child(7) { width: auto;  min-width: 120px; overflow: hidden; white-space: nowrap; }
+
+/* When detail rows are visible, reveal the Time column */
+.tableClass.det-expanded th:nth-child(2),
+.tableClass.det-expanded td:nth-child(2) { width: 82px; min-width: 70px; padding: 7px 10px; overflow: visible; border-bottom: 0.5px solid var(--border); white-space: nowrap; }
+
+/* #detdesc swaps between "Productivity %" and "Task Description" — ensure background fills both */
+#detdesc { min-width: 100px; overflow: hidden; white-space: nowrap; }
+.col-resize-handle {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 5px;
+  cursor: col-resize;
+  user-select: none;
+  background: inherit;
+}
 .tableClass tbody tr:hover td { background: var(--surface2); cursor: pointer; }
 
 /* Row status */
@@ -729,14 +757,14 @@ textarea { width: 100%; resize: vertical; min-height: 60px; font-size: 11px; }
   display: block;
   overflow: auto;
   white-space: nowrap;
-  min-width: 460px;
+  min-width: 500px;
   max-height: 320px;
   width: 100%;
 }
 .tableClass thead,
 .tableClass tbody { display: table; width: 100%; table-layout: fixed; }
-.tableClass thead { min-width: 460px; }
-.tableClass tbody { min-width: 460px; }
+.tableClass thead { min-width: 500px; }
+.tableClass tbody { min-width: 500px; }
 /* ── Legend ──────────────────────────────────────────────────────────────── */
 
 #legend {

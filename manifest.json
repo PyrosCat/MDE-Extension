@@ -188,7 +188,7 @@
       "clipboardWrite",
       "offscreen"
    ],
-   "version": "2.0.4",
+   "version": "2.1.0",
    "web_accessible_resources": [
       {
          "matches": [

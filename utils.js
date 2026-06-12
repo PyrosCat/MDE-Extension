@@ -207,60 +207,38 @@ function mills2AETfromWork(millsIn) { //in is mils out is string
  * @returns {*}
  */
 function convertAET(aet, range) { //input is string, output is string
-    // convert fraction string aet to mm:ss string
-    //first see if there are ranges
-    let newAET = aet;
-    if (range != null && aet.indexOf(" - ") > -1) {
-        let ranges = aet.split(" - ");
-        if (range == "HIGH")
-            newAET = ranges[1];
-        //else if (range == "LOW")
-        //    newAET = ranges[0];
-        else if (range == "MID") {
-            let numl = parseFloat(ranges[0]);
-            let numh = parseFloat(ranges[1]);
-            let diff = numh - numl;
-            let num = numl + (diff / 2);
-            newAET = num.toString();
-            //end check for mid point
-        }
-    }
-    else {
-        let tAET = parseFloat(newAET).toFixed(1);
-        newAET = tAET.toString();
+    // Format a single numeric AET string ("4" or "3.5") as "N.N(MM:SS)"
+    function formatAETMinutes(val) {
+        let pieces = val.split('.');
+        let mins = pieces[0];
+        let fraction = pieces.length === 2 ? parseInt(pieces[1]) : 0;
+        let secsNum = fraction > 0 ? (fraction / 10) * 60 : 0;
+        let secsStr = secsNum === 0 ? '00' : parseFloat(secsNum.toFixed(1)).toString().padStart(2, '0');
+        return '(' + pad(mins) + ':' + secsStr + ')';
     }
 
-    let pieces = newAET.split('.');
-    let aetStr = newAET;
-    let fraction = 0
-    if (pieces.length > 0) {
-        //first minutes
-        if (pieces[0] == ".") {
-            aetStr += "(00:";
-            fraction = parseInt(pieces[1]);
+    if (range != null && aet.indexOf(" - ") > -1) {
+        let ranges = aet.split(" - ");
+        let low  = ranges[0].trim();
+        let high = ranges[1].trim();
+
+        if (range == "HIGH") {
+            // Show full range label with time from high end: "3 - 4(04:00)"
+            return low + ' - ' + high + formatAETMinutes(high);
         }
-        else if (pieces.length == 1) {
-            aetStr += '(' + pad(pieces[0]) + ':';
-            fraction = 0;
+        else if (range == "LOW") {
+            // Show full range label with time from low end: "3 - 4(03:00)"
+            return low + ' - ' + high + formatAETMinutes(low);
         }
-        if (pieces.length == 2) {
-            if (pieces[0] == '.')
-                aetStr += "(00:";
-            else {
-                aetStr += '(' + pad(pieces[0]) + ':';
-            }
-            fraction = parseInt(pieces[1]);
-        }
-        if (parseInt(fraction) > 0) {
-            let realSecs = ((parseInt(fraction) / 10) * 60);
-            realSecs = realSecs.toFixed(1);
-            aetStr += pad(realSecs) + ")";
-        }
-        else {
-            aetStr += "00)";
+        else if (range == "MID") {
+            let mid = ((parseFloat(low) + parseFloat(high)) / 2).toFixed(1);
+            return mid + formatAETMinutes(mid);
         }
     }
-    return aetStr;
+
+    // No range or single value — format as-is
+    let val = parseFloat(aet).toFixed(1);
+    return val + formatAETMinutes(val);
 }
 
 /**
@@ -763,8 +741,8 @@ function processAET(taskAET, aetrange) {  //input is string output is number
         let newTime = taskAET.split(" - ");
         if (aetrange == "HIGH")
             newAET = newTime[1];
-        //else if (aetrange == "LOW")
-        //    newAET = newTime[0];
+        else if (aetrange == "LOW")
+            newAET = newTime[0];
         else if (aetrange == "MID") {
             let numl = parseFloat(newTime[0]);
             let numh = parseFloat(newTime[1]);
@@ -790,8 +768,8 @@ function processAETnFloat(taskAET, aetrange) { //input = "8-9" return millisecon
         let newTime = taskAET.split(" - ");
         if (aetrange == "HIGH")
             newAET = newTime[1];
-        //else if (aetrange == "LOW")
-        //    newAET = newTime[0];
+        else if (aetrange == "LOW")
+            newAET = newTime[0];
         else if (aetrange == "MID") {
             let numl = parseFloat(newTime[0]);
             let numh = parseFloat(newTime[1]);

@@ -335,14 +335,18 @@ test('constants are distinct', () => {
 });
 
 // convertAET
-test('convertAET: plain decimal includes decimal and HH:MM', () => assertEqual(convertAET('4.8', null), '4.8(04:48.0)'));
+test('convertAET: plain decimal includes decimal and HH:MM', () => assertEqual(convertAET('4.8', null), '4.8(04:48)'));
 test('convertAET: 8.0 = 8.0(08:00)', () => assertEqual(convertAET('8.0', null), '8.0(08:00)'));
-test('convertAET: 0.5 = 0.5(00:30.0)', () => assertEqual(convertAET('0.5', null), '0.5(00:30.0)'));
+test('convertAET: 0.5 = 0.5(00:30.0)', () => assertEqual(convertAET('0.5', null), '0.5(00:30)'));
 test('convertAET: range HIGH picks upper value and formats', () => {
-    assertEqual(convertAET('4.0 - 8.0', 'HIGH'), '8.0(08:00)');
+    assertEqual(convertAET('4.0 - 8.0', 'HIGH'), '4.0 - 8.0(08:00)');
+});
+test('convertAET: range LOW picks lower value and formats', () => {
+    assertEqual(convertAET('3 - 4', 'LOW'), '3 - 4(03:00)');
+    assertEqual(convertAET('4.0 - 8.0', 'LOW'), '4.0 - 8.0(04:00)');
 });
 test('convertAET: range MID averages and formats', () => {
-    assertEqual(convertAET('4.0 - 8.0', 'MID'), '6(06:00)');
+    assertEqual(convertAET('4.0 - 8.0', 'MID'), '6.0(06:00)');
 });
 test('convertAET: no range string with null range returns single value format', () => {
     assertEqual(convertAET('4.0', null), '4.0(04:00)');
@@ -352,10 +356,8 @@ test('convertAET: no range string with null range returns single value format', 
 test('processAET: plain decimal', () => assertEqual(processAET('4.8', null), 4.8));
 test('processAET: range HIGH picks upper', () => assertEqual(processAET('4.0 - 8.0', 'HIGH'), 8.0));
 test('processAET: range MID averages', () => assertEqual(processAET('4.0 - 8.0', 'MID'), 6.0));
-test('processAET: range LOW (not implemented) returns low value', () => {
-    // LOW is commented out — falls through to the else, returning the full string as float (which is NaN or first number)
-    const result = processAET('4.0 - 8.0', 'LOW');
-    assert(!isNaN(result), 'Should return a number');
+test('processAET: range LOW picks lower value', () => {
+    assertEqual(processAET('4.0 - 8.0', 'LOW'), 4.0);
 });
 
 // processAETnFloat — AET is in minutes; returns AET * 60000 ms (used for surplus comparisons)
@@ -374,8 +376,8 @@ test('processAETnFloat: MID range averages', () => {
 test('mills2AETfromWork: 9 min workTime → "9.0(09:00)"', () => {
     assertEqual(mills2AETfromWork(9 * 60000), '9.0(09:00)');
 });
-test('mills2AETfromWork: 4.8 min workTime → "4.8(04:48.0)"', () => {
-    assertEqual(mills2AETfromWork(288000), '4.8(04:48.0)');
+test('mills2AETfromWork: 4.8 min workTime → "4.8(04:48)"', () => {
+    assertEqual(mills2AETfromWork(288000), '4.8(04:48)');
 });
 
 // findTaskInTaskStr
@@ -544,7 +546,7 @@ test('roundtrip: millisToMS ↔ MMSStimeStrToMills', () => {
 });
 
 test('roundtrip: convertAET ↔ processAET (decimal)', () => {
-    // convertAET('6.5', null) → "6.5(06:30.0)" — display format, not a round-trip input
+    // convertAET('6.5', null) → "6.5(06:30)" — display format, not a round-trip input
     const display = convertAET('6.5', null);
     assert(display.startsWith('6.5('), 'display should embed original: ' + display);
 });
@@ -554,7 +556,7 @@ test('roundtrip: processAETnFloat then mills back to AET', () => {
     // mills2AETfromWork takes those same ms and converts back to display.
     assertEqual(processAETnFloat('9.0', null), 9 * 60000);
     assertEqual(mills2AETfromWork(9 * 60000), '9.0(09:00)');
-    assertEqual(mills2AETfromWork(processAETnFloat('4.8', null)), '4.8(04:48.0)');
+    assertEqual(mills2AETfromWork(processAETnFloat('4.8', null)), '4.8(04:48)');
 });
 
 test('localSort then reverseSort preserves record count', () => {
@@ -1955,6 +1957,195 @@ console.log('\nphrases.js (pure additions)');
     test('getFirstRow: empty table returns null', () => {
         assertEqual(sandbox.getFirstRow({ rows: [] }), null);
     });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2.1.0 — new feature coverage
+// ─────────────────────────────────────────────────────────────────────────────
+
+// processAETnFloat — LOW coverage (was only HIGH and MID before 2.1.0)
+test('processAETnFloat: LOW range picks lower value', () => {
+    assertEqual(processAETnFloat('4.0 - 8.0', 'LOW'), 4.0 * 60000);
+});
+test('processAETnFloat: LOW range single digit', () => {
+    assertEqual(processAETnFloat('3 - 4', 'LOW'), 3 * 60000);
+});
+
+// convertdisplayAETtomils — LOW coverage
+test('convertdisplayAETtomils: range LOW picks lower value', () => {
+    // "3 - 4(03:00)" — split on " - " gives ["3", "4(03:00)"], LOW picks ranges[0] = "3"
+    assertEqual(convertdisplayAETtomils('3 - 4(03:00)', 'LOW'), 3 * 60000);
+});
+test('convertdisplayAETtomils: range HIGH picks upper from new format', () => {
+    // new format "3 - 4(04:00)" — split on " - " gives ["3", "4(04:00)"], HIGH picks ranges[1]
+    // parseFloat("4(04:00)") = 4
+    assertEqual(convertdisplayAETtomils('3 - 4(04:00)', 'HIGH'), 4 * 60000);
+});
+
+// convertAET — edge cases
+test('convertAET: single whole number with LOW range returns same as null', () => {
+    // No " - " in string — LOW falls through to single-value path
+    assertEqual(convertAET('4', 'LOW'), '4.0(04:00)');
+});
+test('convertAET: single whole number with HIGH range returns same as null', () => {
+    assertEqual(convertAET('4', 'HIGH'), '4.0(04:00)');
+});
+test('convertAET: zero AET formats correctly', () => {
+    assertEqual(convertAET('0', null), '0.0(00:00)');
+});
+test('convertAET: MID with equal range values returns that value', () => {
+    assertEqual(convertAET('4 - 4', 'MID'), '4.0(04:00)');
+});
+
+// MDE_VERSION — test the constant format and banner construction
+// (inline since popup.js requires jQuery/DOM to load)
+test('MDE_VERSION: version string matches expected pattern', () => {
+    // Extract MDE_VERSION from popup.js source without executing the full file
+    const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'popup.js'), 'utf8');
+    const match = src.match(/const MDE_VERSION = '([^']+)'/);
+    assert(match !== null, 'MDE_VERSION constant should exist in popup.js');
+    assert(/^\d+\.\d+\.\d+ \(\d{2}\/\d{2}\/\d{4}\)$/.test(match[1]),
+        'MDE_VERSION should match format "X.Y.Z (MM/DD/YYYY)", got: ' + match[1]);
+});
+test('MDE_VERSION: defaultHelp banner embeds MDE_VERSION', () => {
+    const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'popup.js'), 'utf8');
+    const verMatch = src.match(/const MDE_VERSION = '([^']+)'/);
+    const helpMatch = src.match(/let defaultHelp = ([^;]+);/);
+    assert(verMatch !== null, 'MDE_VERSION should exist');
+    assert(helpMatch !== null, 'defaultHelp should exist');
+    // defaultHelp is built as 'MDE v.' + MDE_VERSION + '...' so the source concat must reference MDE_VERSION
+    assert(helpMatch[1].indexOf('MDE_VERSION') !== -1,
+        'defaultHelp should reference MDE_VERSION constant');
+});
+
+// dateofTask split — date/time parsing used in detLine detRec rows
+test('dateofTask split: standard format splits into date and time', () => {
+    const dateofTaskStr = '6/8/2026 9:59:37 AM';
+    const parts = dateofTaskStr.split(' ');
+    const datePart = parts[0];
+    const timePart = parts.slice(1).join(' ');
+    assertEqual(datePart, '6/8/2026');
+    assertEqual(timePart, '9:59:37 AM');
+});
+test('dateofTask split: date-only string returns empty time', () => {
+    const dateofTaskStr = '6/8/2026';
+    const parts = dateofTaskStr.split(' ');
+    const datePart = parts[0];
+    const timePart = parts.slice(1).join(' ');
+    assertEqual(datePart, '6/8/2026');
+    assertEqual(timePart, '');
+});
+test('dateofTask split: PM time preserved correctly', () => {
+    const dateofTaskStr = '12/31/2025 11:59:59 PM';
+    const parts = dateofTaskStr.split(' ');
+    assertEqual(parts[0], '12/31/2025');
+    assertEqual(parts.slice(1).join(' '), '11:59:59 PM');
+});
+
+// initTrackerColResize — extract function from popup.js source and test in isolation
+{
+    const _src = require('fs').readFileSync(require('path').join(__dirname, '..', 'popup.js'), 'utf8');
+    const _start = _src.indexOf('function initTrackerColResize()');
+    const _end = _src.indexOf('\n}\n', _start) + 3;
+    const _fnSrc = _src.slice(_start, _end);
+
+    const _docListeners = {};
+    function _makeEl(offsetWidth) {
+        return {
+            children: [], style: {}, offsetWidth,
+            _className: '',
+            get className() { return this._className; },
+            set className(v) { this._className = v; },
+            querySelector(sel) {
+                return this.children.find(c => c._className === 'col-resize-handle') || null;
+            },
+            appendChild(child) { this.children.push(child); },
+            removeChild(child) { this.children = this.children.filter(c => c !== child); },
+            addEventListener(ev, fn) { this._listeners = this._listeners || {}; this._listeners[ev] = fn; },
+        };
+    }
+    const _ths = [_makeEl(72), _makeEl(0), _makeEl(90)];
+    const _rows = [
+        [_makeEl(72), _makeEl(0), _makeEl(90)],
+        [_makeEl(72), _makeEl(0), _makeEl(90)],
+    ];
+    const _table = {
+        querySelectorAll(sel) {
+            if (sel === 'thead th') return _ths;
+            const m = sel.match(/tbody tr td:nth-child\((\d+)\)/);
+            if (m) { const n = parseInt(m[1]) - 1; return _rows.map(r => r[n]); }
+            return [];
+        }
+    };
+    const _origDoc = global.document;
+    global.document = {
+        getElementById(id) { return id === 'trackerTable' ? _table : null; },
+        createElement(tag) { return _makeEl(0); },
+        addEventListener(ev, fn) { _docListeners[ev] = fn; },
+        removeEventListener(ev) { delete _docListeners[ev]; },
+    };
+    // Assign to a block-local variable so test callbacks can close over it
+    let initTrackerColResize;
+    eval('initTrackerColResize = ' + _fnSrc.replace('function initTrackerColResize()', 'function()'));
+
+    test('initTrackerColResize: each th gets exactly one handle', () => {
+        initTrackerColResize();
+        assert(_ths.every(th => th.children.filter(c => c._className === 'col-resize-handle').length === 1),
+            'Each th should have exactly one resize handle');
+    });
+
+    const _h = () => _ths.map(th => th.children.find(c => c._className === 'col-resize-handle'));
+
+    test('initTrackerColResize: drag col 0 syncs th and all tds', () => {
+        _h()[0]._listeners['mousedown']({ preventDefault() {}, pageX: 0 });
+        _docListeners['mousemove']({ pageX: 28 });
+        assertEqual(_ths[0].style.width, '100px');
+        assert(_rows.every(r => r[0].style.width === '100px'), 'All td col-1 should be 100px');
+        _docListeners['mouseup']({});
+    });
+
+    test('initTrackerColResize: drag col 2 syncs th and all tds', () => {
+        _h()[2]._listeners['mousedown']({ preventDefault() {}, pageX: 0 });
+        _docListeners['mousemove']({ pageX: 30 });
+        assertEqual(_ths[2].style.width, '120px');
+        assert(_rows.every(r => r[2].style.width === '120px'), 'All td col-3 should be 120px');
+        _docListeners['mouseup']({});
+    });
+
+    test('initTrackerColResize: re-init after expand attaches handle to Time col', () => {
+        _ths[1].offsetWidth = 82;
+        initTrackerColResize();
+        assert(_ths.every(th => th.children.filter(c => c._className === 'col-resize-handle').length === 1),
+            'No duplicate handles after re-init');
+        _h()[1]._listeners['mousedown']({ preventDefault() {}, pageX: 0 });
+        _docListeners['mousemove']({ pageX: 20 });
+        assertEqual(_ths[1].style.width, '102px');
+        assert(_rows.every(r => r[1].style.width === '102px'), 'All td col-2 should be 102px');
+        _docListeners['mouseup']({});
+    });
+
+    test('initTrackerColResize: min-width clamp at 40px', () => {
+        _h()[0]._listeners['mousedown']({ preventDefault() {}, pageX: 0 });
+        _docListeners['mousemove']({ pageX: -9999 });
+        assertEqual(_ths[0].style.width, '40px');
+        _docListeners['mouseup']({});
+    });
+
+    test('initTrackerColResize: listeners removed after mouseup', () => {
+        _h()[0]._listeners['mousedown']({ preventDefault() {}, pageX: 0 });
+        _docListeners['mouseup']({});
+        assert(!('mousemove' in _docListeners) && !('mouseup' in _docListeners),
+            'mousemove and mouseup listeners should be removed after mouseup');
+    });
+
+    test('initTrackerColResize: multiple re-inits keep exactly one handle per th', () => {
+        initTrackerColResize();
+        initTrackerColResize();
+        assert(_ths.every(th => th.children.filter(c => c._className === 'col-resize-handle').length === 1),
+            'Still exactly one handle per th after multiple re-inits');
+    });
+
+    global.document = _origDoc;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
