@@ -11,7 +11,7 @@ Versioning:  MAJOR.MINOR.PATCH
 2.1.0  —  2026-06-08
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Minor — Productivity Tracker column overhaul, new features, and bug fixes.
-372 tests pass (1 new test added).
+392 tests pass (21 new test added).
 
   NEW FEATURES
 
@@ -407,7 +407,7 @@ Major — project recovery and re-release under new ownership.
   documented, and correctly branded foundation to build on.
 
   Ownership and identity
-  · Extension renamed from LFH to MDE across all user-visible surfaces:
+  · Fork of LFH to MDE across all user-visible surfaces:
     popup title, status messages, storage keys, and support contact
   · All source files renamed to kebab-case for consistency
   · Support contact updated to mdipros48@gmail.com
