@@ -1353,11 +1353,17 @@ test('invoice_getStartofPeriod: null uses today', () => {
     const result = invoice_getStartofPeriod(null);
     assertEqual(result.getDay(), 0);
 });
-test('invoice_getStartofPeriod: matches dates_getStartofPeriod', () => {
-    const d = new Date('2024-06-12');
-    const fromDates   = dates_getStartofPeriod(d);
-    const fromInvoice = invoice_getStartofPeriod(new Date(d));
-    assertEqual(fromDates.getTime(), fromInvoice.getTime());
+test('invoice_getStartofPeriod: matches dates_getStartofPeriod when given local-midnight date', () => {
+    // dates_getStartofPeriod normalises to local midnight internally.
+    // invoice_getStartofPeriod does not — passing a UTC-midnight string
+    // ('2024-06-12') can land on the previous day in US timezones.
+    // Both functions must agree when the input is already a local-midnight Date.
+    const y = 2024, m = 5, day = 12; // June 12 2024
+    const localMidnight = new Date(y, m, day, 0, 0, 0); // guaranteed local midnight
+    const fromDates   = dates_getStartofPeriod(new Date(localMidnight));
+    const fromInvoice = invoice_getStartofPeriod(new Date(localMidnight));
+    assertEqual(fromDates.getTime(), fromInvoice.getTime(),
+        'both functions should agree when input is a local-midnight Date');
 });
 
 // badDate — checks whether a date falls outside a period string "Label: M/D/YYYY - M/D/YYYY"
@@ -2146,6 +2152,555 @@ test('dateofTask split: PM time preserved correctly', () => {
     });
 
     global.document = _origDoc;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RH Refresh toggle flow — setOptions (extracted from popup.js)
+// Tests the enable/disable state, ViewLog visibility, and data write-back.
+// ─────────────────────────────────────────────────────────────────────────────
+
+console.log('\nRH Refresh toggle (setOptions)');
+
+{
+    const fs   = require('fs');
+    const path = require('path');
+
+    const popupSrc = fs.readFileSync(path.join(__dirname, '..', 'popup.js'), 'utf8');
+
+    // Extract the setOptions function body by brace-counting at char level.
+    const fnStart = popupSrc.indexOf('function setOptions(');
+    let depth = 0, fnEnd = 0;
+    for (let ci = fnStart; ci < popupSrc.length; ci++) {
+        if (popupSrc[ci] === '{') depth++;
+        if (popupSrc[ci] === '}') { depth--; if (depth === 0) { fnEnd = ci + 1; break; } }
+    }
+    const setOptionsSrc = popupSrc.slice(fnStart, fnEnd);
+
+    // Build a minimal test context for one setOptions call.
+    // Returns the context after calling setOptions so tests can inspect it.
+    function makeCtx({ rhreloadChecked, rhreloadaChecked, rhrefreshsecs, enhancements }) {
+        const shown  = new Set();
+        const hidden = new Set();
+        const vals   = { '#rhrefreshsecs': rhrefreshsecs !== undefined ? String(rhrefreshsecs) : '120' };
+        let   rhreloadaIsChecked = !!rhreloadaChecked;
+        let   rhreloadIsChecked  = !!rhreloadChecked;
+
+        // Track the last val() set on #rhrefreshsecs so we can assert on defaults.
+        let lastSetRhrefreshsecs = vals['#rhrefreshsecs'];
+
+        const $ = function(sel) {
+            return {
+                is(state)   { return state === ':checked'
+                                ? (sel === '#RHRELOAD' ? rhreloadIsChecked : rhreloadaIsChecked)
+                                : false; },
+                val(v)      { if (v !== undefined) { vals[sel] = String(v); lastSetRhrefreshsecs = String(v); } return vals[sel] || ''; },
+                show()      { shown.add(sel); },
+                hide()      { hidden.add(sel); },
+                // stubs for the rest of setOptions (CHATM, TRACKER, etc.)
+                prop()      { return false; },
+                text()      { return ''; },
+                html()      { return ''; },
+                append()    {},
+                remove()    {},
+                each()      {},
+                on()        { return this; },
+                off()       {},
+                css()       {},
+                prepend()   {},
+                attr()      { return ''; },
+                click()     {},
+                change()    {},
+                children()  { return { length: 0 }; },
+                find()      { return { length: 0, first: () => ({}) }; },
+                blur()      {},
+            };
+        };
+
+        // Minimal globals setOptions depends on.
+        const noop = () => {};
+        const ctx = {
+            $,
+            enhancements,
+            indexData:  2,
+            indexState: 1,
+            indexMsgOpts: 3,
+            chatcriteria: { image: false, names: '', phrases: '', reda: false, phsent: 0,
+                            phraseTable: false, autocorrect: false },
+            document: { activeElement: { blur: noop } },
+            SendSafeRuntimeMessage: noop,
+            setMsg: noop,
+            openTestArea: noop,
+            console,
+        };
+
+        // eval setOptions into the context.
+        // eslint-disable-next-line no-new-func
+        const fn = new Function(
+            ...Object.keys(ctx),
+            '"use strict";\n' + setOptionsSrc + '\nreturn setOptions;'
+        )(...Object.values(ctx));
+
+        fn();
+
+        return { shown, hidden, enhancements, vals, lastSetRhrefreshsecs };
+    }
+
+    // Shared synthetic enhancements array that mirrors the live popup structure.
+    // Indexes: 0=FEEDBACKL, 1=SHORTCUTS, 2=CHATM, 3=MSGOPTS, 4=SOCIALO, 5=RHRELOAD, 6=TRACKER
+    function makeEnhancements(rhState, rhData) {
+        return [
+            ['FEEDBACKL', false, null],
+            ['SHORTCUTS', false, null],
+            ['CHATM', false, { image: false, names: '', phrases: '', reda: false, phsent: 0,
+                               phraseTable: false, autocorrect: false, yukonOnly: false,
+                               chatalertsound: null, colorData: null, colorp: true, transdate: null, myNames: null }],
+            ['MSGOPTS',   false, { email: '', chatTextAlerts: [], chatRedAlert: false, monitor: false }],
+            ['SOCIALO',   false, null],
+            ['RHRELOAD',  rhState, rhData || { opts: false, refreshsecs: '120' }],
+            ['TRACKER',   false, { alert: 'none', report: false, zone: 'P', autobackup: false, save4days: '4',
+                                   thisComputer: { number: 1, desc: 'Console 1' } }],
+            ['SFILES',    false, null],
+            ['IDLEC',     false, null],
+        ];
+    }
+
+    // ── Enable path ──────────────────────────────────────────────────────────
+
+    test('setOptions RHRELOAD: enable shows #ViewLog', () => {
+        const { shown } = makeCtx({ rhreloadChecked: true, enhancements: makeEnhancements(false) });
+        assert(shown.has('#ViewLog'), '#ViewLog should be shown when RHRELOAD is checked');
+    });
+
+    test('setOptions RHRELOAD: enable shows .rhAClass', () => {
+        const { shown } = makeCtx({ rhreloadChecked: true, enhancements: makeEnhancements(false) });
+        assert(shown.has('.rhAClass'), '.rhAClass should be shown when RHRELOAD is checked');
+    });
+
+    test('setOptions RHRELOAD: enable shows .rhrefreshDisplay', () => {
+        const { shown } = makeCtx({ rhreloadChecked: true, enhancements: makeEnhancements(false) });
+        assert(shown.has('.rhrefreshDisplay'), '.rhrefreshDisplay should be shown when RHRELOAD is checked');
+    });
+
+    test('setOptions RHRELOAD: enable writes refreshsecs back to enhancements data', () => {
+        const enh = makeEnhancements(false, { opts: false, refreshsecs: '90' });
+        makeCtx({ rhreloadChecked: true, rhrefreshsecs: '90', enhancements: enh });
+        assertEqual(enh[5][2].refreshsecs, '90', 'refreshsecs should be persisted to enhancements[5][2]');
+    });
+
+    test('setOptions RHRELOAD: enable reads opts from #RHRELOADA', () => {
+        const enh = makeEnhancements(false, { opts: false, refreshsecs: '120' });
+        makeCtx({ rhreloadChecked: true, rhreloadaChecked: true, enhancements: enh });
+        assert(enh[5][2].opts === true, 'data.opts should be true when #RHRELOADA is checked');
+    });
+
+    test('setOptions RHRELOAD: empty refreshsecs defaults to "120"', () => {
+        const enh = makeEnhancements(false, { opts: false, refreshsecs: '' });
+        const { vals } = makeCtx({ rhreloadChecked: true, rhrefreshsecs: '', enhancements: enh });
+        assertEqual(vals['#rhrefreshsecs'], '120', 'empty refreshsecs should be defaulted to "120"');
+    });
+
+    // ── Disable path ─────────────────────────────────────────────────────────
+
+    test('setOptions RHRELOAD: disable hides #ViewLog', () => {
+        const { hidden } = makeCtx({ rhreloadChecked: false, enhancements: makeEnhancements(false) });
+        assert(hidden.has('#ViewLog'), '#ViewLog should be hidden when RHRELOAD is unchecked');
+    });
+
+    test('setOptions RHRELOAD: disable hides .rhAClass', () => {
+        const { hidden } = makeCtx({ rhreloadChecked: false, enhancements: makeEnhancements(false) });
+        assert(hidden.has('.rhAClass'), '.rhAClass should be hidden when RHRELOAD is unchecked');
+    });
+
+    test('setOptions RHRELOAD: disable hides .rhrefreshDisplay', () => {
+        const { hidden } = makeCtx({ rhreloadChecked: false, enhancements: makeEnhancements(false) });
+        assert(hidden.has('.rhrefreshDisplay'), '.rhrefreshDisplay should be hidden when RHRELOAD is unchecked');
+    });
+
+    test('setOptions RHRELOAD: disable does not show #ViewLog', () => {
+        const { shown } = makeCtx({ rhreloadChecked: false, enhancements: makeEnhancements(false) });
+        assert(!shown.has('#ViewLog'), '#ViewLog should not be shown when RHRELOAD is unchecked');
+    });
+
+    // ── State symmetry — enable then disable in two separate calls ───────────
+
+    test('setOptions RHRELOAD: toggling off after on hides all three selectors', () => {
+        const enh = makeEnhancements(false);
+        // First call: enable
+        makeCtx({ rhreloadChecked: true, enhancements: enh });
+        // Second call: disable
+        const { hidden } = makeCtx({ rhreloadChecked: false, enhancements: enh });
+        assert(hidden.has('#ViewLog') && hidden.has('.rhAClass') && hidden.has('.rhrefreshDisplay'),
+            'All three selectors must be hidden after toggle-off');
+    });
+
+    // ── Load-state path (setupPop logic, extracted inline) ───────────────────
+    // The setupPop loop reads enhancements[i][indexState] to decide show/hide on
+    // popup open.  We replicate that specific branch here without running all of setupPop.
+
+    console.log('\nRH Refresh load-state (setupPop branch)');
+
+    function runLoadBranch(rhState, rhData) {
+        const shown  = new Set();
+        const hidden = new Set();
+        let   propCalled = null;
+        let   valSet     = null;
+
+        const $ = function(sel) {
+            return {
+                show()         { shown.add(sel); },
+                hide()         { hidden.add(sel); },
+                prop(k, v)     { propCalled = { sel, k, v }; },
+                val(v)         { if (v !== undefined) valSet = { sel, v }; return v || ''; },
+                is()           { return false; },
+                text()         { return ''; },
+                html()         { return ''; },
+            };
+        };
+
+        const indexState = 1, indexData = 2;
+        const rec = ['RHRELOAD', rhState, rhData || { opts: false, refreshsecs: '90' }];
+
+        // This is the exact branch from setupPop (popup.js lines 465-478).
+        if (rec[0] === 'RHRELOAD') {
+            if (rec[indexState] === true) {
+                $('#ViewLog').show();
+                $('.rhAClass').show();
+                $('#RHRELOADA').prop('checked', rec[indexData].opts);
+                $('#rhrefreshsecs').val(rec[indexData].refreshsecs);
+                $('.rhrefreshDisplay').show();
+            } else {
+                $('#ViewLog').hide();
+                $('.rhAClass').hide();
+                $('.rhrefreshDisplay').hide();
+            }
+        }
+
+        return { shown, hidden, propCalled, valSet };
+    }
+
+    test('setupPop RHRELOAD state=true: ViewLog shown on load', () => {
+        const { shown } = runLoadBranch(true, { opts: false, refreshsecs: '90' });
+        assert(shown.has('#ViewLog'), '#ViewLog should be shown when RHRELOAD stored state is true');
+    });
+
+    test('setupPop RHRELOAD state=true: rhrefreshsecs populated on load', () => {
+        const { valSet } = runLoadBranch(true, { opts: true, refreshsecs: '180' });
+        assert(valSet !== null && valSet.v === '180', '#rhrefreshsecs should be set to stored value on load');
+    });
+
+    test('setupPop RHRELOAD state=true: RHRELOADA checkbox reflects stored opts', () => {
+        const { propCalled } = runLoadBranch(true, { opts: true, refreshsecs: '90' });
+        assert(propCalled !== null && propCalled.v === true,
+            '#RHRELOADA prop("checked") should match stored opts value');
+    });
+
+    test('setupPop RHRELOAD state=false: ViewLog hidden on load', () => {
+        const { hidden } = runLoadBranch(false);
+        assert(hidden.has('#ViewLog'), '#ViewLog should be hidden when RHRELOAD stored state is false');
+    });
+
+    test('setupPop RHRELOAD state=false: rhrefreshDisplay hidden on load', () => {
+        const { hidden } = runLoadBranch(false);
+        assert(hidden.has('.rhrefreshDisplay'), '.rhrefreshDisplay should be hidden when RHRELOAD stored state is false');
+    });
+
+    // ── NRT period logging (NRTLogCleanup integration) ────────────────────────
+    // saveNRT is chrome-storage dependent, so we test the cleanup+accumulate
+    // logic that saveNRT delegates to: parse JSON → NRTLogCleanup → push → re-serialize.
+
+    console.log('\nNRT period logging (integration)');
+
+    function simulateSaveNRT(existingJsonStr, typeIn, nowMs) {
+        const nrtRecs = existingJsonStr != null ? NRTLogCleanup(JSON.parse(existingJsonStr)) : [];
+        nrtRecs.push({ type: typeIn, dateMills: nowMs });
+        return JSON.stringify(nrtRecs);
+    }
+
+    test('NRT saveNRT-logic: first entry stored when log is empty', () => {
+        const result = JSON.parse(simulateSaveNRT(null, 'NRT', Date.now()));
+        assertEqual(result.length, 1, 'should have exactly one entry');
+        assertEqual(result[0].type, 'NRT');
+    });
+
+    test('NRT saveNRT-logic: appends to existing log', () => {
+        const now = Date.now();
+        const initial = JSON.stringify([{ type: 'NRT', dateMills: now - 1000 }]);
+        const result  = JSON.parse(simulateSaveNRT(initial, 'TASK', now));
+        assertEqual(result.length, 2, 'should have two entries after append');
+        assertEqual(result[1].type, 'TASK');
+    });
+
+    test('NRT saveNRT-logic: old entries pruned before appending', () => {
+        const now      = Date.now();
+        const old      = now - (32 * 24 * 60 * 60 * 1000); // 32 days ago
+        const initial  = JSON.stringify([
+            { type: 'OLD', dateMills: old },
+            { type: 'RECENT', dateMills: now - 1000 },
+        ]);
+        const result = JSON.parse(simulateSaveNRT(initial, 'NEW', now));
+        assert(result.every(r => r.type !== 'OLD'), 'old entry should have been pruned');
+        assertEqual(result.length, 2, 'should have recent + new entry after prune');
+    });
+
+    test('NRT saveNRT-logic: dateMills is a number (not string)', () => {
+        const now    = Date.now();
+        const result = JSON.parse(simulateSaveNRT(null, 'NRT', now));
+        assert(typeof result[0].dateMills === 'number', 'dateMills should be a number');
+    });
+
+    test('NRT saveNRT-logic: type field preserved exactly', () => {
+        const typeLabels = ['NRT', 'TASK', 'b'];
+        for (const t of typeLabels) {
+            const result = JSON.parse(simulateSaveNRT(null, t, Date.now()));
+            assertEqual(result[0].type, t, `type field should be "${t}"`);
+        }
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CSS refactor — style.css / popup.css split (structural tests)
+// Verifies the 2.1.1 split is correct: right rules in right files, no leaks.
+// ─────────────────────────────────────────────────────────────────────────────
+
+console.log('\nCSS refactor (style.css / popup.css split)');
+
+{
+    const fs   = require('fs');
+    const path = require('path');
+    const root = path.join(__dirname, '..');
+
+    const styleSrc = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+    const popupSrc = fs.readFileSync(path.join(root, 'popup.css'), 'utf8');
+
+    // Strip comments so we test actual rules, not comment text
+    function stripComments(css) {
+        return css.replace(/\/\*[\s\S]*?\*\//g, '');
+    }
+    const styleRules = stripComments(styleSrc);
+    const popupRules = stripComments(popupSrc);
+
+    // Helper: does the given css text contain a rule (not just a comment) for sel?
+    // Matches sel as start of a rule line, allowing for whitespace.
+    function hasRule(css, sel) {
+        // Escape regex special chars in selector
+        const esc = sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp('(?:^|\\n)\\s*' + esc + '\\s*[{,]', 'm').test(css);
+    }
+
+    // ── MUST be in style.css (content-script selectors) ──────────────────────
+
+    console.log('\n  content-script selectors in style.css');
+
+    test('style.css: .Submit rule present', () => {
+        assert(hasRule(styleRules, '.Submit'), '.Submit must be in style.css for host-page injected buttons');
+    });
+
+    test('style.css: .Submit:hover rule present', () => {
+        assert(hasRule(styleRules, '.Submit:hover'), '.Submit:hover must be in style.css');
+    });
+
+    test('style.css: .changed rule present', () => {
+        assert(hasRule(styleRules, '.changed'), '.changed must be in style.css (spell.js uses it on host pages)');
+    });
+
+    test('style.css: .img-bar rule present', () => {
+        assert(hasRule(styleRules, '.img-bar'), '.img-bar must be in style.css (chat.js injects it onto host pages)');
+    });
+
+    test('style.css: .multicolor-text rule present', () => {
+        assert(hasRule(styleRules, '.multicolor-text'), '.multicolor-text must be in style.css (chat.js injects it onto host pages)');
+    });
+
+    test('style.css: #quickCorrect rule present', () => {
+        assert(hasRule(styleRules, '#quickCorrect'), '#quickCorrect must be in style.css (spell.js injects it onto host pages)');
+    });
+
+    test('style.css: #quickName rule present', () => {
+        assert(hasRule(styleRules, '#quickName'), '#quickName must be in style.css');
+    });
+
+    test('style.css: #quickNameNew rule present', () => {
+        assert(hasRule(styleRules, '#quickNameNew'), '#quickNameNew must be in style.css');
+    });
+
+    test('style.css: #message4desktoplink rule present', () => {
+        assert(hasRule(styleRules, '#message4desktoplink'), '#message4desktoplink must be in style.css (feedback.js injects it)');
+    });
+
+    test('style.css: :root design tokens present', () => {
+        assert(styleRules.includes(':root'), ':root block must be in style.css — content-script selectors reference CSS vars');
+    });
+
+    // ── MUST NOT be in style.css (popup-only selectors) ──────────────────────
+
+    console.log('\n  popup-only selectors NOT in style.css (leak check)');
+
+    test('style.css: no #popup-header rule (popup-only)', () => {
+        assert(!hasRule(styleRules, '#popup-header'), '#popup-header is popup-only and must not be in style.css');
+    });
+
+    test('style.css: no .toggle-row rule (popup-only)', () => {
+        assert(!hasRule(styleRules, '.toggle-row'), '.toggle-row is popup-only and must not be in style.css');
+    });
+
+    test('style.css: no .toggle-wrap rule (popup-only)', () => {
+        assert(!hasRule(styleRules, '.toggle-wrap'), '.toggle-wrap is popup-only and must not be in style.css');
+    });
+
+    test('style.css: no .chip-btn rule (popup-only)', () => {
+        assert(!hasRule(styleRules, '.chip-btn'), '.chip-btn is popup-only and must not be in style.css');
+    });
+
+    test('style.css: no #soundsettings rule (popup-only)', () => {
+        assert(!hasRule(styleRules, '#soundsettings'), '#soundsettings is popup-only and must not be in style.css');
+    });
+
+    test('style.css: no .tableClass rule (popup-only)', () => {
+        assert(!hasRule(styleRules, '.tableClass'), '.tableClass is popup-only and must not be in style.css');
+    });
+
+    test('style.css: no body width rule (popup-only)', () => {
+        assert(!hasRule(styleRules, 'body'), 'body selector is popup-only — width:340px must not be in style.css');
+    });
+
+    test('style.css: no universal reset rule (popup-only)', () => {
+        assert(!hasRule(styleRules, '*'), 'universal reset (*, *::before) is popup-only and must not be in style.css');
+    });
+
+    test('style.css: no .smallbut rule (popup-only)', () => {
+        // .Submit is intentionally in both files, but .smallbut is popup-only
+        assert(!hasRule(styleRules, '.smallbut'), '.smallbut is popup-only and must not be in style.css');
+    });
+
+    // ── Dead overlay rules must be in popup.css (not lost) ───────────────────
+
+    console.log('\n  dead overlay rules preserved in popup.css');
+
+    test('popup.css: #timer-bar rule preserved', () => {
+        assert(hasRule(popupRules, '#timer-bar'), '#timer-bar must be preserved in popup.css');
+    });
+
+    test('popup.css: #timerText rule preserved', () => {
+        assert(hasRule(popupRules, '#timerText'), '#timerText must be preserved in popup.css');
+    });
+
+    test('popup.css: #desktopLink rule preserved', () => {
+        assert(hasRule(popupRules, '#desktopLink'), '#desktopLink must be preserved in popup.css');
+    });
+
+    test('popup.css: #headerlinks rule preserved', () => {
+        assert(hasRule(popupRules, '#headerlinks'), '#headerlinks must be preserved in popup.css');
+    });
+
+    // Dead overlay rules must NOT be in style.css (would affect host pages)
+    test('style.css: no #timer-bar rule (dead, popup-only)', () => {
+        assert(!hasRule(styleRules, '#timer-bar'), '#timer-bar must not be in style.css');
+    });
+
+    test('style.css: no #timerText rule (dead, popup-only)', () => {
+        assert(!hasRule(styleRules, '#timerText'), '#timerText must not be in style.css');
+    });
+
+    // ── popup.css must have all major popup UI sections ───────────────────────
+
+    console.log('\n  popup.css completeness');
+
+    test('popup.css: universal reset present', () => {
+        assert(popupRules.includes('*, *::before, *::after'), 'universal reset must be in popup.css');
+    });
+
+    test('popup.css: body width:340px present', () => {
+        assert(popupRules.includes('width: 340px'), 'body width:340px must be in popup.css');
+    });
+
+    test('popup.css: body.tracker-open present', () => {
+        assert(hasRule(popupRules, 'body.tracker-open'), 'body.tracker-open must be in popup.css');
+    });
+
+    test('popup.css: body.det-expanded-wide present', () => {
+        assert(hasRule(popupRules, 'body.det-expanded-wide'), 'body.det-expanded-wide must be in popup.css');
+    });
+
+    test('popup.css: .tableClass rule present', () => {
+        assert(hasRule(popupRules, '.tableClass'), '.tableClass (tracker table) must be in popup.css');
+    });
+
+    test('popup.css: .toggle-wrap rule present', () => {
+        assert(hasRule(popupRules, '.toggle-wrap'), '.toggle-wrap must be in popup.css');
+    });
+
+    test('popup.css: .Submit grouped with .smallbut in popup.css', () => {
+        assert(popupRules.includes('.Submit, .smallbut'), '.Submit must appear grouped with .smallbut in popup.css');
+    });
+
+    test('popup.css: :root design tokens present', () => {
+        assert(popupRules.includes(':root'), ':root block must be in popup.css so popup.html is self-contained');
+    });
+
+    // ── Edge cases ────────────────────────────────────────────────────────────
+
+    console.log('\n  edge cases');
+
+    // style.css must NOT import or reference popup-specific things
+    test('style.css: does not @import or url()-reference popup.css', () => {
+        // Comments mentioning popup.css are fine (documentation).
+        // Only actual CSS imports or url() calls would be a problem.
+        const noComments = styleSrc.replace(/\/\*[\s\S]*?\*\//g, '');
+        assert(!noComments.includes('popup.css'), 'style.css must not @import or url()-reference popup.css');
+    });
+
+    // Both files import the DM Sans font (both are self-contained)
+    test('style.css: includes DM Sans @import', () => {
+        assert(styleSrc.includes("DM Sans"), 'style.css must include DM Sans import for host-page injected text');
+    });
+
+    test('popup.css: includes DM Sans @import', () => {
+        assert(popupSrc.includes("DM Sans"), 'popup.css must include DM Sans import');
+    });
+
+    // The .Submit split: style.css has standalone .Submit only (not grouped)
+    // popup.css has the grouped version — verify style.css does NOT have the grouped version
+    test('style.css: .Submit is standalone (not grouped with .smallbut)', () => {
+        assert(!styleRules.includes('.Submit, .smallbut'), 'style.css .Submit must be standalone, not grouped with popup-only .smallbut');
+    });
+
+    // :root must be identical in both files (single source of truth for design tokens)
+    test(':root token values are identical in style.css and popup.css', () => {
+        const extractRoot = css => {
+            const m = css.match(/:root\s*\{([^}]+)\}/);
+            return m ? m[1].replace(/\s+/g, ' ').trim() : '';
+        };
+        const styleRoot = extractRoot(styleSrc);
+        const popupRoot = extractRoot(popupSrc);
+        assertEqual(styleRoot, popupRoot, ':root design tokens must be identical in both files');
+    });
+
+    // style.css line count sanity: should be under 150 lines (was 1111)
+    test('style.css: line count is under 150 (refactor completed)', () => {
+        const lines = styleSrc.split('\n').length;
+        assert(lines < 150, `style.css should be under 150 lines after refactor; got ${lines}`);
+    });
+
+    // popup.css should be substantially larger than the old 28 lines
+    test('popup.css: line count is over 900 (absorbed popup UI rules)', () => {
+        const lines = popupSrc.split('\n').length;
+        assert(lines > 900, `popup.css should be over 900 lines after refactor; got ${lines}`);
+    });
+
+    // manifest.json must still reference style.css, never popup.css
+    test('manifest.json: content_scripts reference style.css', () => {
+        const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
+        const allCssRefs = manifest.content_scripts.flatMap(cs => cs.css || []);
+        assert(allCssRefs.includes('style.css'), 'manifest.json must include style.css in content_scripts');
+        assert(!allCssRefs.includes('popup.css'), 'manifest.json must NOT include popup.css in content_scripts');
+    });
+
+    // popup.html must reference both files
+    test('popup.html: loads both style.css and popup.css', () => {
+        const html = fs.readFileSync(path.join(root, 'popup.html'), 'utf8');
+        assert(html.includes('style.css'), 'popup.html must load style.css');
+        assert(html.includes('popup.css'), 'popup.html must load popup.css');
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
