@@ -52,7 +52,7 @@ let wS = "";
 
 /** Single source of truth for the displayed version string.
  *  Update this whenever the extension version changes. */
-const MDE_VERSION = '2.1.0 (06/08/2026)';
+const MDE_VERSION = '2.1.1 (06/21/2026)';
 
 let defaultHelp = 'MDE v.' + MDE_VERSION + '. If you find this extension helpful, please consider supporting development efforts \u2014 click the Facebook link (top right) for ways to help.';
 let help = {

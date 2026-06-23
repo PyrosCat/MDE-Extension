@@ -8,10 +8,60 @@ Versioning:  MAJOR.MINOR.PATCH
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1.1  —  2026-06-21
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Patch — CSS refactor: split style.css into content-script and popup-only files.
+455 tests pass (42 new: 413 carried forward from 2.1.0, plus 42 CSS structural
+tests added in this session covering the split correctness and edge cases).
+
+  CSS REFACTOR — style.css / popup.css split
+
+  style.css (1111 → 102 lines) is injected as a content script into host
+  pages (RaterHub, Appen). It now contains only:
+    · :root design tokens (required by content-script selectors)
+    · 8 selectors actually used on host pages: .Submit, .changed, .img-bar,
+      .multicolor-text, #quickCorrect, #quickName, #quickNameNew,
+      #message4desktoplink
+
+  popup.css (28 → 1144 lines) is loaded only by popup.html and cannot
+  bleed onto host pages. It now contains all popup UI rules previously
+  living in style.css, plus:
+    · Universal reset (*, *::before, *::after) — was leaking margin:0 /
+      padding:0 onto every RaterHub/Appen element; same class of bug as
+      the body width:340px leak fixed in v2.0.3
+    · Dead timer-overlay rules (#timer-bar, #timerText, #desktopLink,
+      #headerlinks) — preserved but annotated; the task timer feature
+      was replaced by document.title updates in task-actions.js
+
+  manifest.json and popup.html unchanged — no new files, no new references.
+  The .Submit rule is present in both files: style.css (standalone, for
+  buttons injected onto host pages) and popup.css (grouped with .smallbut
+  siblings, for popup UI).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 2.1.0  —  2026-06-08
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Minor — Productivity Tracker column overhaul, new features, and bug fixes.
-392 tests pass (21 new test added).
+413 tests pass (42 new tests added: 21 in the initial 2.1.0 session, 21 more
+in a follow-up session covering the RH Refresh toggle flow — see below).
+
+  TEST COVERAGE — RH Refresh toggle flow (follow-up, 392 → 413 tests)
+
+  · setOptions (popup.js, live toggle path) — 11 tests
+      - Enable: #ViewLog, .rhAClass, .rhrefreshDisplay shown; refreshsecs
+        and opts written back to enhancements[i][indexData]; empty
+        refreshsecs defaults to "120"
+      - Disable: all three selectors hidden
+      - Toggle symmetry: enable then disable across two calls hides all
+        three selectors correctly
+  · setupPop (popup.js, load-state path) — 5 tests
+      - state=true: #ViewLog shown, #rhrefreshsecs populated from stored
+        data, #RHRELOADA checkbox reflects stored opts
+      - state=false: #ViewLog and .rhrefreshDisplay hidden
+  · NRTLogCleanup / saveNRT integration — 5 tests
+      - First entry stored when log empty; appends to existing log; old
+        entries (31+ days) pruned before appending; dateMills stored as
+        number; type field preserved exactly across NRT/TASK/other labels
 
   NEW FEATURES
 
