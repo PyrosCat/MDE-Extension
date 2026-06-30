@@ -7,6 +7,85 @@ Versioning:  MAJOR.MINOR.PATCH
   PATCH  Bug fixes, typo corrections, test additions
 
 
+
+2.1.2  —  2026-06-23
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Patch — Fix audio.js message channel closed error; fix worktime edit controls
+overlapping adjacent columns (Bug 2); fix consolidated view date column too
+narrow (Bug 3 — Invoice button date column).
+472 tests pass (18 new: 10 Bug 2, 8 Bug 3).
+
+  BUG FIX — audio.js: message channel closed before response
+
+  Chrome error: "A listener indicated an asynchronous response by returning
+  true, but the message channel closed before a response was received."
+
+  Root cause: SendSafeTabMessage (utils.js) always passes a callback to
+  chrome.tabs.sendMessage, so Chrome expects a response from every listener
+  that receives the message. The FORRHTEMP listener in audio.js called
+  snd.play() (async) but returned undefined — Chrome closed the channel
+  before the promise resolved.
+
+  Fix: added return true to keep the channel open, and added sendResponse
+  calls inside the .then() and .catch() handlers so Chrome receives an
+  explicit reply once play() settles.
+
+  BUG FIX — Bug 2: worktime select/save/cancel overlapped Surplus and Task
+  Description columns
+
+  The three edit controls were inserted via $(appendTo).after(), where
+  appendTo was the worktime <td>. In a browser, non-td/th elements inside
+  a <tr> are invalid HTML and get ejected from the table into a block box
+  before it. MDE's #trackertablediv has overflow:hidden, so the ejected
+  controls were clipped; on wider viewports they appeared but pushed into
+  adjacent columns. LFH had no body width constraint and no overflow:hidden
+  on the table container so the popup expanded to fit.
+
+  Fix — floating panel outside the table:
+  - dataclick() captures clickedTd and clickedRow (closest <tr>) before
+    creating anything.
+  - getBoundingClientRect() on the clicked td and #trackertablediv
+    calculates panelTop / panelLeft so the panel lands directly below the
+    worktime cell regardless of scroll position.
+  - A single #worktime-edit-panel div is appended to #trackertablediv
+    (position:absolute, z-index:100) containing the select, Save, and
+    Cancel controls — the <tr> is never touched.
+  - All five save branches use $(clickedRow).find() instead of
+    $(ev.currentTarget).closest("tr") / parentElement traversals.
+  - Cancel uses revertTime(clickedRow[0]) instead of
+    revertTime(ev.currentTarget.parentElement).
+  - removeEditButtons() removes #worktime-edit-panel; legacy id removes
+    kept as fallback.
+  - scrollIntoView() on #cancel removed — caused the tracker scrollbar to
+    jump to top because the absolutely-positioned panel has no scroll
+    ancestor. Panel is already positioned correctly via getBoundingClientRect().
+  - #trackertablediv gets position:relative in popup.css so the panel
+    anchors to it correctly.
+  - #worktime-edit-panel styled as a horizontal flex row with border,
+    shadow, and DM Sans font.
+
+  BUG FIX — Bug 3: Invoice button (#totals) date column too narrow for labels
+
+  The "Invoice" button triggers buildTable with invoice:true, which appends
+  "Week Ending ..." and "Total for the period" summary rows via
+  processTotalLine. The standard col 1 (Date) width of 72px is too narrow
+  for these labels (~136px at 12px DM Sans).
+
+  Fix — CSS:
+  - body.invoice-open { width: auto; min-width: 640px } widens the popup
+    while invoice view is active.
+  - .tableClass.invoice-view th/td:nth-child(1) sets width:140px /
+    min-width:130px with white-space:nowrap.
+
+  Fix — JS in buildTable:
+  - Clears invoice-view from #trackerTable and invoice-open from body at
+    the top of every buildTable call so they don't persist into normal
+    tracker view.
+  - When invoice:true, adds invoice-view to #trackerTable and invoice-open
+    to body so both the column width and popup width rules take effect.
+  - closeInvoice handler removes both classes before triggering ViewTracker
+    to rebuild the normal table.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 2.1.1  —  2026-06-21
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

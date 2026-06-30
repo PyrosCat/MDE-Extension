@@ -350,7 +350,9 @@ function findFirstRec(date) {
 
 // pay period is 2 weeks - starts on a sunday - starting on april 1 2018.
 
-// beg declared in dates.js (shared scope in popup.html)
+// beg is declared in dates.js but invoice.js is injected without dates.js.
+// Guard: define beg here only if it is not already in scope.
+try { beg; } catch(e) { beg = new Date('03/18/18'); }
 
 Date.prototype.addDays = function (days) {
     let dat = new Date(this.valueOf());

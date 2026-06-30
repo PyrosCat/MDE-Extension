@@ -82,6 +82,22 @@ body.det-expanded-wide {
   min-width: 640px;
 }
 
+/* Consolidated view — wider popup so date labels aren't clipped */
+body.cons-open {
+  width: auto;
+  min-width: 640px;
+}
+
+/* Invoice view (#totals button) — wider popup so "Week Ending..." and
+   "Total for the period" labels in col 1 aren't clipped.               */
+body.invoice-open {
+  width: auto;
+  min-width: 640px;
+}
+
+/* Invoice view (#totals button) — col 1 needs ~150px for "Week Ending..."
+   and "Total for the period" labels added by processTotalLine.           */
+
 /* ── Popup header ─────────────────────────────────────────────────────────── */
 
 #popup-header {
@@ -368,7 +384,7 @@ textarea { width: 100%; resize: vertical; min-height: 60px; font-size: 11px; }
 .tableClass th:nth-child(1), .tableClass td:nth-child(1) { width: 72px;  min-width: 60px;  white-space: nowrap; }
 .tableClass th:nth-child(2), .tableClass td:nth-child(2) { width: 0;     min-width: 0;  padding: 0; overflow: hidden; border: none; }
 .tableClass th:nth-child(3), .tableClass td:nth-child(3) { width: 90px;  min-width: 72px; white-space: nowrap; }
-.tableClass th:nth-child(4), .tableClass td:nth-child(4) { width: 76px;  min-width: 60px; }
+.tableClass th:nth-child(4), .tableClass td:nth-child(4) { width: 84px;  min-width: 60px; }
 .tableClass th:nth-child(5), .tableClass td:nth-child(5) { width: 76px;  min-width: 60px; }
 .tableClass th:nth-child(6), .tableClass td:nth-child(6) { width: 64px;  min-width: 48px; }
 .tableClass th:nth-child(7), .tableClass td:nth-child(7) { width: auto;  min-width: 120px; overflow: hidden; white-space: nowrap; }
@@ -376,6 +392,16 @@ textarea { width: 100%; resize: vertical; min-height: 60px; font-size: 11px; }
 /* When detail rows are visible, reveal the Time column */
 .tableClass.det-expanded th:nth-child(2),
 .tableClass.det-expanded td:nth-child(2) { width: 82px; min-width: 70px; padding: 7px 10px; overflow: visible; border-bottom: 0.5px solid var(--border); white-space: nowrap; }
+
+/* Invoice view (#totals button) — widen col 1 for "Week Ending..." and
+   "Total for the period" labels (~136px at 12px DM Sans).              */
+.tableClass.invoice-view th:nth-child(1),
+.tableClass.invoice-view td:nth-child(1) { width: 140px; min-width: 130px; white-space: nowrap; }
+
+/* Consolidated view — col 1 width reserved for future Consolidated Totals
+   work. Col 2 stays at width:0 to keep the hidden det-time-col aligned.  */
+.tableClass.cons-view th:nth-child(1),
+.tableClass.cons-view td:nth-child(1) { width: 150px; min-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* #detdesc swaps between "Productivity %" and "Task Description" — ensure background fills both */
 #detdesc { min-width: 100px; overflow: hidden; white-space: nowrap; }
@@ -783,6 +809,40 @@ textarea { width: 100%; resize: vertical; min-height: 60px; font-size: 11px; }
   border-radius: var(--radius-lg);
   overflow: hidden;
   width: calc(100% - 32px);
+  position: relative;
+}
+
+/* Worktime edit panel — floats outside the table as a child of
+   #trackertablediv, positioned via getBoundingClientRect() in JS so it
+   appears directly below the clicked worktime cell without inserting invalid
+   elements into the <tr> or overflowing adjacent columns.               */
+#worktime-edit-panel {
+  position: absolute;
+  z-index: 100;
+  background: var(--surface);
+  border: 0.5px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  white-space: nowrap;
+}
+#worktime-edit-panel select {
+  font-size: 11px;
+  font-family: 'DM Sans', sans-serif;
+  border: 0.5px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 2px 4px;
+  background: var(--surface);
+  color: var(--text);
+}
+#worktime-edit-panel .save,
+#worktime-edit-panel .cancel {
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 /* With display:block the table doesn't auto-stretch; force full width and

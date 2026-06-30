@@ -2703,6 +2703,145 @@ console.log('\nCSS refactor (style.css / popup.css split)');
     });
 }
 
+// ── Bug 2: worktime edit panel floats outside the table (popup.js + popup.css)
+
+console.log('\n  Bug 2: worktime edit panel outside table');
+
+{
+    const fs   = require('fs');
+    const path = require('path');
+    const jsSrc  = fs.readFileSync(path.join(__dirname, '..', 'popup.js'),  'utf8');
+    const cssSrc = fs.readFileSync(path.join(__dirname, '..', 'popup.css'), 'utf8');
+
+    test('popup.js: does not use $(appendTo).after() for edit controls', () => {
+        // .after() on a <td> inserts siblings in the <tr> — invalid HTML that
+        // browsers eject from the table and clips under overflow:hidden.
+        assert(!jsSrc.includes('$(appendTo).after('),
+            'Must not use $(appendTo).after() — inserts controls outside the td as invalid <tr> children');
+    });
+
+    test('popup.js: appends #worktime-edit-panel to #trackertablediv', () => {
+        assert(jsSrc.includes('worktime-edit-panel'),
+            '#worktime-edit-panel must be appended to #trackertablediv');
+        assert(jsSrc.includes("$('#trackertablediv').append("),
+            'Controls must be appended to #trackertablediv, not inserted into the <tr>');
+    });
+
+    test('popup.js: captures clickedRow before building the panel', () => {
+        // clickedRow is used by all save/cancel handlers since the panel has
+        // no ancestor <tr> and closest("tr") from the button returns nothing.
+        assert(jsSrc.includes("clickedRow = clickedTd.closest('tr')"),
+            'dataclick must capture clickedRow = clickedTd.closest("tr") before appending the panel');
+    });
+
+    test('popup.js: uses getBoundingClientRect() to position the panel', () => {
+        assert(jsSrc.includes('getBoundingClientRect()'),
+            'dataclick must use getBoundingClientRect() to position the panel below the clicked td');
+    });
+
+    test('popup.js: save handler uses clickedRow.find() not closest("tr")', () => {
+        // $(ev.currentTarget).closest("tr") returns nothing when the button
+        // is outside the table — must use the captured clickedRow instead.
+        assert(!jsSrc.includes('$(ev.currentTarget).closest("tr")'),
+            'Save handler must not use $(ev.currentTarget).closest("tr") — use clickedRow instead');
+    });
+
+    test('popup.js: cancel handler uses revertTime(clickedRow[0])', () => {
+        assert(jsSrc.includes('revertTime(clickedRow[0])'),
+            'Cancel handler must call revertTime(clickedRow[0]), not revertTime(ev.currentTarget.parentElement)');
+    });
+
+    test('popup.js: removeEditButtons removes #worktime-edit-panel', () => {
+        assert(jsSrc.includes("$('#worktime-edit-panel').remove()"),
+            "removeEditButtons must remove $('#worktime-edit-panel')");
+    });
+
+    test('popup.js: scrollIntoView on #cancel removed (caused scroll-to-top)', () => {
+        // scrollIntoView walked up to the popup window and reset the scroll
+        // position because the absolutely-positioned panel has no scroll ancestor.
+        assert(!jsSrc.includes("getElementById('cancel').scrollIntoView"),
+            'scrollIntoView on #cancel must be removed — panel is already positioned correctly via getBoundingClientRect()');
+    });
+
+    test('popup.css: #trackertablediv has position:relative', () => {
+        // Required so position:absolute on #worktime-edit-panel anchors to
+        // #trackertablediv rather than the nearest positioned ancestor above it.
+        const match = cssSrc.match(/#trackertablediv\s*\{([^}]+)\}/);
+        assert(match && (match[1].includes('position: relative') || match[1].includes('position:relative')),
+            '#trackertablediv must have position:relative as the containing block for #worktime-edit-panel');
+    });
+
+    test('popup.css: #worktime-edit-panel has position:absolute and z-index', () => {
+        const match = cssSrc.match(/#worktime-edit-panel\s*\{([^}]+)\}/);
+        assert(match, '#worktime-edit-panel rule must exist in popup.css');
+        assert(match[1].includes('position: absolute') || match[1].includes('position:absolute'),
+            '#worktime-edit-panel must use position:absolute to float over the table');
+        assert(match[1].includes('z-index'),
+            '#worktime-edit-panel must have z-index to appear above table rows');
+    });
+}
+
+// ── Bug 3: invoice view date column width (popup.css + popup.js) ──────────────
+// Bug 3 is the "#totals" Invoice button, which calls buildTable with
+// invoice:true and appends "Week Ending..." / "Total for the period" rows
+// via processTotalLine. Col 1 (Date) was 72px — too narrow for those labels.
+
+console.log('\n  Bug 3: invoice view date column width');
+
+{
+    const fs   = require('fs');
+    const path = require('path');
+    const jsSrc  = fs.readFileSync(path.join(__dirname, '..', 'popup.js'),  'utf8');
+    const cssSrc = fs.readFileSync(path.join(__dirname, '..', 'popup.css'), 'utf8');
+
+    test('popup.css: .invoice-view col 1 min-width >= 130px (fits "Total for the period")', () => {
+        const match = cssSrc.match(/\.tableClass\.invoice-view th:nth-child\(1\)[^{]*\{([^}]+)\}/);
+        assert(match, '.tableClass.invoice-view th:nth-child(1) rule must exist');
+        const w = match[1].match(/min-width:\s*(\d+)px/);
+        assert(w && parseInt(w[1]) >= 130,
+            'invoice-view col 1 min-width must be >= 130px to fit "Total for the period" at 12px DM Sans');
+    });
+
+    test('popup.css: .invoice-view col 1 has white-space:nowrap', () => {
+        const match = cssSrc.match(/\.tableClass\.invoice-view th:nth-child\(1\)[^{]*\{([^}]+)\}/);
+        assert(match && (match[1].includes('white-space: nowrap') || match[1].includes('white-space:nowrap')),
+            'invoice-view col 1 must have white-space:nowrap to prevent line-wrapping');
+    });
+
+    test('popup.js: buildTable adds invoice-view class when invoice:true', () => {
+        assert(jsSrc.includes("$('#trackerTable').addClass('invoice-view')"),
+            "buildTable must addClass('invoice-view') on #trackerTable when invoice is true");
+    });
+
+    test('popup.css: body.invoice-open sets min-width to widen popup', () => {
+        const match = cssSrc.match(/body\.invoice-open\s*\{([^}]+)\}/);
+        assert(match, 'body.invoice-open rule must exist in popup.css');
+        assert(match[1].includes('min-width'),
+            'body.invoice-open must set min-width so the popup is wide enough for date labels');
+    });
+
+    test('popup.js: buildTable adds invoice-open to body when invoice:true', () => {
+        assert(jsSrc.includes("$('body').addClass('invoice-open')"),
+            "buildTable must addClass('invoice-open') on body when invoice is true");
+    });
+
+    test('popup.js: buildTable removes invoice-view and invoice-open at top of each call', () => {
+        assert(jsSrc.includes("$('#trackerTable').removeClass('invoice-view')"),
+            "buildTable must removeClass('invoice-view') at the top before re-adding conditionally");
+        assert(jsSrc.includes("$('body').removeClass('invoice-open')"),
+            "buildTable must removeClass('invoice-open') at the top so it resets on non-invoice calls");
+    });
+
+    test('popup.js: closeInvoice handler removes invoice-view and invoice-open', () => {
+        const idx = jsSrc.indexOf('"#closeInvoice").click(');
+        assert(idx !== -1, '"#closeInvoice").click( handler must exist');
+        const block = jsSrc.slice(idx, idx + 400);
+        assert(block.includes("$('#trackerTable').removeClass('invoice-view')"),
+            "closeInvoice handler must removeClass('invoice-view') on close");
+        assert(block.includes("$('body').removeClass('invoice-open')"),
+            "closeInvoice handler must removeClass('invoice-open') on close");
+    });
+}
 // ─────────────────────────────────────────────────────────────────────────────
 // Results
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1889,6 +1889,7 @@ function real_myListener(request, sender, sendResponse) {
     //}
     if (request.text == "RELOADME") {
         chrome.tabs.reload(sender.tab.id);
+        sendResponse(0);
         return true;
     }
 

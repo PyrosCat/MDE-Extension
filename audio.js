@@ -26,13 +26,16 @@ onload = () => {
             chrome.runtime.sendMessage({ text: 'CONSOLELOG', msg: send });
             let promise1 = snd.play();
             promise1.then(_ => {
+                sendResponse({ ok: true });
                 chrome.runtime.sendMessage({ text: 'CONSOLELOG', msg: "promise in audio sucessful" });
             }).catch(error => {
+                sendResponse({ ok: false, error: error.message });
                 chrome.runtime.sendMessage({ text: 'CONSOLELOG', msg: "promise caught in audio" });
             });
 
         //    console.log("length is:" + urlParams.get('length'));
         //    setTimeout(self.close, urlParams.get('length'));
+            return true; // keep channel open while snd.play() resolves
         }
     });
 }

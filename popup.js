@@ -52,7 +52,7 @@ let wS = "";
 
 /** Single source of truth for the displayed version string.
  *  Update this whenever the extension version changes. */
-const MDE_VERSION = '2.1.1 (06/21/2026)';
+const MDE_VERSION = '2.1.2 (06/23/2026)';
 
 let defaultHelp = 'MDE v.' + MDE_VERSION + '. If you find this extension helpful, please consider supporting development efforts \u2014 click the Facebook link (top right) for ways to help.';
 let help = {
@@ -1590,7 +1590,6 @@ window.addEventListener('load', function (evt) {
                 $('.tablearea').children().remove();
                 if (!buildConsolidated(dataA.recs, periodArray))
                     setStatus("No task data to display");
-                window.scrollTo(0, 0);
                 $("#when").change(function () {
                     $("#consolidated").trigger("click");
                 });
@@ -2242,6 +2241,8 @@ function buildTable(data, zone, invoice, filter) {
     $('#trackerTable > thead').children().remove();
     $("#closeInvoice").remove();
     $('#closeTotalsBut').remove();
+    $('#trackerTable').removeClass('invoice-view');
+    $('body').removeClass('invoice-open');
     $("#normalTableHeader").show();
     if (invoice) {
         //add close button
@@ -2249,11 +2250,15 @@ function buildTable(data, zone, invoice, filter) {
         $("#closeInvoice").click(function (ev) {
             $("#ViewTracker").trigger("click");  //refresh table
             $("#closeInvoice").remove();
+            $('#trackerTable').removeClass('invoice-view');
+            $('body').removeClass('invoice-open');
             $("#when").unbind('change');
             $("#wheni").unbind('change');
         });
         //hide pacific and filter
         $("#normalTableHeader").hide();
+        $('#trackerTable').addClass('invoice-view');
+        $('body').addClass('invoice-open');
     }
     table.find('thead').append('<tr><th>Date</th><th class="det-time-col">Time</th><th>Task(s)</th><th title="AET for released tasks is set to time worked on the task.">AET(*)</th><th>WorkTime</th><th>Surplus</th>' +
         '<th title="(AET/Time worked)*100)" id="detdesc">Productivity %</th></tr>');
@@ -3242,6 +3247,8 @@ function revertTime(tr) {
  * Remove all inline edit/save buttons from the tracker table.
  */
 function removeEditButtons() {
+    $('#worktime-edit-panel').remove();
+    // Legacy ids removed individually in case any survived outside the panel
     $('#cancel').remove();
     $('#insert').remove();
     $("#newStatus").remove();
@@ -3273,9 +3280,19 @@ function dataclick(ev) {
     }
 
     if ($(ev.currentTarget.parentElement).find('.save').length == 0) {
-        let appendTo = $(ev.currentTarget);
-        $(appendTo).after('<button class="cancel" type="button" id="cancel" title="Cancel - no changes, and remove these buttons">Cancel</button>');
-        $(appendTo).after('<button class="save" type="button" id="insert" title="Save change to work time" disabled>Save</button>');
+        // Capture the clicked td and its parent tr now. All save/cancel
+        // handlers use clickedRow directly — the floating panel is appended
+        // to #trackertablediv and has no ancestor <tr>, so closest("tr")
+        // and parentElement traversals from the button would return nothing.
+        let clickedTd  = $(ev.currentTarget);
+        let clickedRow = clickedTd.closest('tr');
+
+        // Position the panel just below the clicked td, offset relative to
+        // #trackertablediv so position:absolute lands in the right spot.
+        let tdRect  = ev.currentTarget.getBoundingClientRect();
+        let divRect = document.getElementById('trackertablediv').getBoundingClientRect();
+        let panelTop  = tdRect.bottom - divRect.top;
+        let panelLeft = tdRect.left   - divRect.left;
 
         let selStatement = '<select name="newStatus" id="newStatus">' +
             '<option value="none" selected>Select action... </option>' +
@@ -3285,9 +3302,14 @@ function dataclick(ev) {
             '<option value="a">Set worktime to be AET</option>' +
             '<option value="d">Delete Entry</option>' +
             '</select>';
-        $(appendTo).after(selStatement);
+        let saveBtn   = '<button class="save" type="button" id="insert" title="Save change to work time" disabled>Save</button>';
+        let cancelBtn = '<button class="cancel" type="button" id="cancel" title="Cancel - no changes, and remove these buttons">Cancel</button>';
 
-        document.getElementById('cancel').scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+        $('#trackertablediv').append(
+            '<div id="worktime-edit-panel" style="top:' + panelTop + 'px;left:' + panelLeft + 'px;">' +
+            selStatement + saveBtn + cancelBtn + '</div>'
+        );
+
         $("select#newStatus").change(function (ev) {
             let statusChange = $("#newStatus option:selected").val();
             if (statusChange != "none") {
@@ -3303,7 +3325,6 @@ function dataclick(ev) {
         $(".save").click(function (ev) {
             //check to see if thy selected something from the drop down first
             let statusChange = $("#newStatus option:selected").val();
-            let pTask = null;
             let task = null;
             let taskId;
             let newTime;
@@ -3314,32 +3335,25 @@ function dataclick(ev) {
             else {
                 //process it
                 if (statusChange == 'r') {
-                    //task = $(ev.currentTarget.parentElement).find('td#realtaskId');
-                    pTask = $(ev.currentTarget).closest("tr");
-                    task = $(pTask).find('#realtaskId');
+                    task = $(clickedRow).find('#realtaskId');
                     if (task.length == 1) {
                         taskId = $(task).val();
-                        //taskId = taskId.substring(0, 10);
                         removeEditButtons();
-                        updatefromtd(taskId, false, 0, true, pTask);
+                        updatefromtd(taskId, false, 0, true, clickedRow);
                     }
                 } else if (statusChange == 's') {
-                    //task = $(ev.currentTarget.parentElement).find('td#realtaskId');
-                    pTask = $(ev.currentTarget).closest("tr");
-                    task = $(pTask).find('#realtaskId');
+                    task = $(clickedRow).find('#realtaskId');
                     if (task.length == 1) {
                         taskId = $(task).val();
-                        //taskId = taskId.substring(0, 10);
                         removeEditButtons();
-                        updatefromtd(taskId, true, 0, false, pTask);
+                        updatefromtd(taskId, true, 0, false, clickedRow);
                     }
 
                 } else if (statusChange == 'a') {
-                    pTask = $(ev.currentTarget).closest("tr");
-                    task = $(pTask).find('#realtaskId');
+                    task = $(clickedRow).find('#realtaskId');
                     if (task.length == 1) {
                         taskId = $(task).val();
-                        workId = $(ev.currentTarget.parentElement).find('td#taskAET');
+                        workId = $(clickedRow).find('td#taskAET');
                         if (workId.length == 1) {
                             newVal = $(workId).text();
                             newTime = convertdisplayAETtomils(newVal, $('input[name="aetrange"]:checked').val());
@@ -3347,41 +3361,34 @@ function dataclick(ev) {
                                 setTrackMsg("Error while setting to AET", "red");
                             }
                             else {
-                                let timeEl = $(ev.currentTarget.parentElement).find('td#workTime');
+                                let timeEl = $(clickedRow).find('td#workTime');
                                 if (timeEl.length == 1) {
                                     timeEl[0].textContent = millisToMinutesAndSeconds(newTime);
                                     timeEl[0].className = "greentdnogrey";
                                 }
                                 removeEditButtons();
-                                updatefromtd(taskId, false, newTime, false, pTask);
+                                updatefromtd(taskId, false, newTime, false, clickedRow);
                             }
                         }
                     }
 
                 } else if (statusChange == 'd') {
-                    //find record by task id or aqtime
-                    //delete it from data array and table
-                    // rebuild total line
-                    pTask = $(ev.currentTarget).closest("tr");
-                    task = $(pTask).find('#realtaskId');
+                    task = $(clickedRow).find('#realtaskId');
                     taskId = $(task).val();
                     let field = "taskId";
-                    let aqtime = $(ev.currentTarget.parentElement).find('td#datestr');
+                    let aqtime = $(clickedRow).find('td#datestr');
                     let taskDate = $(aqtime).text();
                     if (taskId == "") {
                         taskId = taskDate;
                         field = "dateofTask";
                     }
-                    //else 
-                    //    taskId = taskId.substring(0, 10); 
                     deleteRec(taskId, field, taskDate); //after delete table will be refreshed 
                 }
                 else if (statusChange == 'x') {
-                    pTask = $(ev.currentTarget).closest("tr");
-                    task = $(pTask).find('#realtaskId');
+                    task = $(clickedRow).find('#realtaskId');
                     if (task.length == 1) {
                         taskId = $(task).val();
-                        workId = $(ev.currentTarget.parentElement).find('td#workTime');
+                        workId = $(clickedRow).find('td#workTime');
                         if (workId.length == 1) {
                             newVal = $(workId).text();
                             newTime = MMSStimeStrToMills(newVal);
@@ -3390,7 +3397,7 @@ function dataclick(ev) {
                             }
                             else {
                                 removeEditButtons();
-                                updatefromtd(taskId, false, newTime, false, pTask);
+                                updatefromtd(taskId, false, newTime, false, clickedRow);
                             }
                         }
                     }
@@ -3399,13 +3406,10 @@ function dataclick(ev) {
             removeEditButtons();
         });
 
-
-
         $("#cancel").click(function (ev) {
-            revertTime(ev.currentTarget.parentElement);
+            revertTime(clickedRow[0]);
             removeEditButtons();
         });
-
 
     }
 }
@@ -3531,11 +3535,15 @@ function buildConsolidated(dataA, periodArray) {
     //erase all the records in the body
     $('#trackerTable > tbody').children().remove();
     $('#trackerTable > thead').children().remove();
+    // Clear any expanded-row state so det-expanded cannot override col 2 width:0
+    $('#trackerTable').removeClass('det-expanded');
+    $('body').removeClass('det-expanded-wide');
     $('#closeTotalsBut').remove();
     $("#closeInvoice").remove();
     $("#trackertablediv").prepend('<button class="Submit" type="button" id="closeTotalsBut"><img src="close.png" width="12" height="12" /></button>');
-    table.find('thead').append('<tr><th>Date</th><th>Device Count</th><th  title="For released tasks, AET is set to work time">AET(*)</th><th>Hours Worked</th><th>Surplus</th><th title="(AET/Time worked)*100)" id="detdesc">Productivity %</th></tr>');
-
+    // Hidden <th> at position 2 aligns with the hidden det-time-col <td>
+    // present in every processTotalLine / buildTotalCLine row (7 cells each).
+    table.find('thead').append('<tr><th>Date</th><th class="det-time-col"></th><th>Device Count</th><th  title="For released tasks, AET is set to work time">AET(*)</th><th>Hours Worked</th><th>Surplus</th><th title="(AET/Time worked)*100)" id="detdesc">Productivity %</th></tr>');
 
     //add handler for close button and position it on the right
     $("#closeTotalsBut").click(function (ev) {
@@ -3721,7 +3729,6 @@ function buildConsolidated(dataA, periodArray) {
     $("#alignthis").hide();
     $("#normalTableHeader").hide();
     $("#consolidatedTableHeader").show();
-    document.getElementById('fillinvoiceC').scrollIntoView(); // force whole invoice paragraph into view
 
     return true;
 }
@@ -3772,7 +3779,7 @@ function processConslidateDetail(el) {
                     //if (detMatchComputer(thisComputer,true) )
                     //    platformDesc = '</td><td input type="text" id="computerDesc" class="' + workClass + '"><div contenteditable>';
                     let newStr = '<tr class="' + rowClass + '"><td>' + platformNumDet + rec.date +
-                        platformDesc + thisComputer.desc + '</td><td>' + platformDescDet + displayAET +
+                        '' + thisComputer.desc + '</td><td>' + platformDescDet + displayAET +
                         '</td><td>' + tempWork +
                         '</td><td id="surplus" class="' + workClass + '">' + surplus +
                         '</td></tr>';
