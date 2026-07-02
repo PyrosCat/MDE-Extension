@@ -7,9 +7,36 @@
      v2.1.x  Full split: all popup UI moved from style.css into this file.
              style.css now contains only the 8 selectors actually used by
              content scripts (chat.js, raterhub.js, task-actions.js, etc.)
-             Universal reset and dead overlay rules also moved here.         */
+             Universal reset and dead overlay rules also moved here.
+     v2.1.3  DM Sans bundled locally (fonts/) instead of @import from
+             fonts.googleapis.com. The popup's host_permissions never
+             included fonts.googleapis.com / fonts.gstatic.com, so the
+             remote @import silently failed and every popup element was
+             actually rendering in the system-ui/sans-serif fallback —
+             not DM Sans. Bundling removes the network dependency and the
+             host-permission requirement entirely.                          */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap');
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('fonts/dm-sans-v17-latin-regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('fonts/dm-sans-v17-latin-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('fonts/dm-sans-v17-latin-600.woff2') format('woff2');
+}
 
 /* ── Reset & Base ─────────────────────────────────────────────────────────── */
 /* Scoped to popup.html only — was in style.css and leaked margin:0/padding:0
@@ -82,10 +109,11 @@ body.det-expanded-wide {
   min-width: 640px;
 }
 
-/* Consolidated view — wider popup so date labels aren't clipped */
+/* Consolidated Totals view (#consolidated button) — wider popup so columns
+   aren't clipped. Min columns: 175+95+66+100+105+90 = 631px + 32px margins. */
 body.cons-open {
   width: auto;
-  min-width: 640px;
+  min-width: 700px;
 }
 
 /* Invoice view (#totals button) — wider popup so "Week Ending..." and
@@ -398,10 +426,22 @@ textarea { width: 100%; resize: vertical; min-height: 60px; font-size: 11px; }
 .tableClass.invoice-view th:nth-child(1),
 .tableClass.invoice-view td:nth-child(1) { width: 140px; min-width: 130px; white-space: nowrap; }
 
-/* Consolidated view — col 1 width reserved for future Consolidated Totals
-   work. Col 2 stays at width:0 to keep the hidden det-time-col aligned.  */
+/* Consolidated Totals view (#consolidated button) — sized to actual content:
+   Date: "Total for 6/18/2026(Thurs)" | Device Count: "1" | AET(*): "01:16:00"
+   | Hours Worked: "01:09:04" | Surplus: "Diff is 00:06:56" | Productivity %: "110.03 %"
+   Col 2 stays at width:0 to keep the hidden det-time-col aligned.        */
 .tableClass.cons-view th:nth-child(1),
-.tableClass.cons-view td:nth-child(1) { width: 150px; min-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tableClass.cons-view td:nth-child(1) { width: 175px; min-width: 145px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tableClass.cons-view th:nth-child(3),
+.tableClass.cons-view td:nth-child(3) { width: 95px;  min-width: 72px; white-space: nowrap; }
+.tableClass.cons-view th:nth-child(4),
+.tableClass.cons-view td:nth-child(4) { width: 66px;  min-width: 56px; white-space: nowrap; }
+.tableClass.cons-view th:nth-child(5),
+.tableClass.cons-view td:nth-child(5) { width: 100px;  min-width: 70px; white-space: nowrap; }
+.tableClass.cons-view th:nth-child(6),
+.tableClass.cons-view td:nth-child(6) { width: 105px;  min-width: 84px; white-space: nowrap; }
+.tableClass.cons-view th:nth-child(7),
+.tableClass.cons-view td:nth-child(7) { width: auto;  min-width: 90px; white-space: nowrap; }
 
 /* #detdesc swaps between "Productivity %" and "Task Description" — ensure background fills both */
 #detdesc { min-width: 100px; overflow: hidden; white-space: nowrap; }
@@ -414,6 +454,7 @@ textarea { width: 100%; resize: vertical; min-height: 60px; font-size: 11px; }
   background: inherit;
 }
 .tableClass tbody tr:hover td { background: var(--surface2); cursor: pointer; }
+.tableClass tbody tr:hover td.totaltd { background: var(--purple-bg); }
 
 /* Row status */
 .releasedC   { background-color: var(--amber-bg) !important; }
@@ -423,6 +464,15 @@ textarea { width: 100%; resize: vertical; min-height: 60px; font-size: 11px; }
 .notimeRow   { color: var(--red-text) !important; }
 
 /* Numeric helpers */
+/* Numeric helpers — qualified with .tableClass td so specificity (0,2,1)
+   beats the base .tableClass td rule (0,1,1) that sets color:var(--text).  */
+.tableClass td.redtdd { color: var(--red-text); background: var(--surface2); font-weight: 600; }
+.tableClass td.greentd { color: var(--green-text); background: var(--surface2); font-weight: 600; }
+.tableClass td.totaltd { color: var(--purple-text); background: var(--purple-bg); font-weight: 600; }
+.tableClass td.bluecalc { color: var(--accent); }
+.tableClass td.dateWork { color: var(--purple); font-weight: 600; }
+.tableClass td.greentitle { color: var(--green); font-weight: 600; }
+/* Unqualified fallbacks kept for non-table uses of these classes */
 .redtdd { color: var(--red-text); background: var(--surface2); font-weight: 600; }
 .rednogrey, .redtdnogrey, .redText { color: var(--red-text); font-weight: 600; }
 .greennogrey, .greentdnogrey { color: var(--green-text); font-weight: 600; }
@@ -430,6 +480,7 @@ textarea { width: 100%; resize: vertical; min-height: 60px; font-size: 11px; }
 .greentitle { color: var(--green); font-weight: 600; }
 .bluecalc { color: var(--accent); }
 .blueTitle { color: var(--accent); cursor: pointer; }
+.tableClass.cons-view .blueTitle { cursor: default; }
 .totalline { color: var(--purple-text); background: var(--purple-bg); font-weight: 600; }
 .totaltd   { color: var(--purple-text); background: var(--purple-bg); font-weight: 600; }
 .greenI    { color: var(--green); }

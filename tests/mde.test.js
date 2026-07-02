@@ -2649,13 +2649,13 @@ console.log('\nCSS refactor (style.css / popup.css split)');
         assert(!noComments.includes('popup.css'), 'style.css must not @import or url()-reference popup.css');
     });
 
-    // Both files import the DM Sans font (both are self-contained)
-    test('style.css: includes DM Sans @import', () => {
-        assert(styleSrc.includes("DM Sans"), 'style.css must include DM Sans import for host-page injected text');
+    // Both files declare DM Sans locally (both are self-contained, no network dependency)
+    test('style.css: declares DM Sans font-family', () => {
+        assert(styleSrc.includes("DM Sans"), 'style.css must declare DM Sans for host-page injected text');
     });
 
-    test('popup.css: includes DM Sans @import', () => {
-        assert(popupSrc.includes("DM Sans"), 'popup.css must include DM Sans import');
+    test('popup.css: declares DM Sans font-family', () => {
+        assert(popupSrc.includes("DM Sans"), 'popup.css must declare DM Sans');
     });
 
     // The .Submit split: style.css has standalone .Submit only (not grouped)
@@ -2842,6 +2842,776 @@ console.log('\n  Bug 3: invoice view date column width');
             "closeInvoice handler must removeClass('invoice-open') on close");
     });
 }
+// ── Consolidated Totals view (#consolidated button) column sizing ─────────────
+// Independent from invoice-view (#totals button). Content sample:
+// "Total for 6/18/2026(Thurs)" | "1" | "01:16:00" | "01:09:04" |
+// "Diff is 00:06:56" | "110.03 %"
+
+console.log('\n  Consolidated Totals view column sizing');
+
+{
+    const fs   = require('fs');
+    const path = require('path');
+    const jsSrc  = fs.readFileSync(path.join(__dirname, '..', 'popup.js'),  'utf8');
+    const cssSrc = fs.readFileSync(path.join(__dirname, '..', 'popup.css'), 'utf8');
+
+    test('popup.css: body.cons-open sets min-width to widen popup', () => {
+        const match = cssSrc.match(/body\.cons-open\s*\{([^}]+)\}/);
+        assert(match, 'body.cons-open rule must exist in popup.css');
+        assert(match[1].includes('min-width'),
+            'body.cons-open must set min-width so the popup is wide enough for cons-view content');
+    });
+
+    test('popup.css: body.cons-open min-width fits sum of cons-view column widths', () => {
+        // col1 175 + col3 95 + col4 66 + col5 100 + col6 105 + col7(min) 90 = 631px,
+        // plus #trackertablediv margins (32px) — body.cons-open must cover this.
+        const bodyMatch = cssSrc.match(/body\.cons-open\s*\{([^}]+)\}/);
+        assert(bodyMatch, 'body.cons-open rule must exist');
+        const bw = bodyMatch[1].match(/min-width:\s*(\d+)px/);
+        assert(bw, 'body.cons-open must specify min-width in px');
+
+        const colWidths = [1, 3, 4, 5, 6, 7].map(n => {
+            const m = cssSrc.match(new RegExp(`\\.tableClass\\.cons-view th:nth-child\\(${n}\\)[^{]*\\{([^}]+)\\}`));
+            assert(m, `.cons-view th:nth-child(${n}) rule must exist`);
+            const w = m[1].match(/min-width:\s*(\d+)px/);
+            assert(w, `.cons-view th:nth-child(${n}) must specify min-width`);
+            return parseInt(w[1]);
+        });
+        const colSum = colWidths.reduce((a, b) => a + b, 0);
+        assert(parseInt(bw[1]) >= colSum + 32,
+            `body.cons-open min-width (${bw[1]}px) must be >= column sum (${colSum}px) + 32px margins`);
+    });
+
+    test('popup.css: .cons-view col 1 (Date) sized for "Total for D/M/YYYY(Day)"', () => {
+        const match = cssSrc.match(/\.tableClass\.cons-view th:nth-child\(1\)[^{]*\{([^}]+)\}/);
+        assert(match, '.cons-view th:nth-child(1) rule must exist');
+        const w = match[1].match(/min-width:\s*(\d+)px/);
+        assert(w && parseInt(w[1]) >= 140,
+            'cons-view col 1 min-width must be >= 140px to fit "Total for 6/18/2026(Thurs)"');
+    });
+
+    test('popup.css: .cons-view col 3 (Device Count) sized independently from base', () => {
+        const match = cssSrc.match(/\.tableClass\.cons-view th:nth-child\(3\)[^{]*\{([^}]+)\}/);
+        assert(match, '.cons-view th:nth-child(3) rule must exist');
+        assert(match[1].includes('white-space: nowrap') || match[1].includes('white-space:nowrap'),
+            'cons-view col 3 must have white-space:nowrap');
+    });
+
+    test('popup.css: .cons-view col 4 (AET) sized independently from base', () => {
+        assert(cssSrc.match(/\.tableClass\.cons-view th:nth-child\(4\)[^{]*\{[^}]+\}/),
+            '.cons-view th:nth-child(4) rule must exist');
+    });
+
+    test('popup.css: .cons-view col 5 (Hours Worked) sized independently from base', () => {
+        assert(cssSrc.match(/\.tableClass\.cons-view th:nth-child\(5\)[^{]*\{[^}]+\}/),
+            '.cons-view th:nth-child(5) rule must exist');
+    });
+
+    test('popup.css: .cons-view col 6 (Surplus) sized for "Diff is 00:06:56"', () => {
+        const match = cssSrc.match(/\.tableClass\.cons-view th:nth-child\(6\)[^{]*\{([^}]+)\}/);
+        assert(match, '.cons-view th:nth-child(6) rule must exist');
+        const w = match[1].match(/min-width:\s*(\d+)px/);
+        assert(w && parseInt(w[1]) >= 70,
+            'cons-view col 6 min-width must be wide enough for "Diff is 00:06:56"');
+    });
+
+    test('popup.css: .cons-view col 7 (Productivity %) sized independently from base', () => {
+        assert(cssSrc.match(/\.tableClass\.cons-view th:nth-child\(7\)[^{]*\{[^}]+\}/),
+            '.cons-view th:nth-child(7) rule must exist');
+    });
+
+    test('popup.css: invoice-view and cons-view col 1 widths are independent', () => {
+        // Bug requirement: the two views must size independently of each other.
+        const invMatch  = cssSrc.match(/\.tableClass\.invoice-view th:nth-child\(1\)[^{]*\{([^}]+)\}/);
+        const consMatch = cssSrc.match(/\.tableClass\.cons-view th:nth-child\(1\)[^{]*\{([^}]+)\}/);
+        assert(invMatch && consMatch, 'both invoice-view and cons-view col 1 rules must exist');
+        assert(invMatch[1] !== consMatch[1],
+            'invoice-view and cons-view col 1 rules must be defined independently (not shared/identical by coincidence of a shared selector)');
+    });
+
+    test('popup.js: buildConsolidated adds cons-view class to #trackerTable', () => {
+        assert(jsSrc.includes("$('#trackerTable').addClass('cons-view')"),
+            "buildConsolidated must addClass('cons-view') on #trackerTable after building the thead");
+    });
+
+    test('popup.js: buildConsolidated adds cons-open class to body', () => {
+        assert(jsSrc.includes("$('body').addClass('cons-open')"),
+            "buildConsolidated must addClass('cons-open') on body to trigger the wider popup width");
+    });
+
+    test('popup.js: closeTotalsBut removes cons-view on close', () => {
+        const idx = jsSrc.indexOf('"#closeTotalsBut").click(');
+        assert(idx !== -1, '"#closeTotalsBut").click( handler must exist');
+        const block = jsSrc.slice(idx, idx + 500);
+        assert(block.includes("$('#trackerTable').removeClass('cons-view')"),
+            "closeTotalsBut handler must removeClass('cons-view') from #trackerTable on close");
+    });
+
+    test('popup.js: closeTotalsBut removes cons-open on close', () => {
+        const idx = jsSrc.indexOf('"#closeTotalsBut").click(');
+        const block = jsSrc.slice(idx, idx + 500);
+        assert(block.includes("$('body').removeClass('cons-open')"),
+            "closeTotalsBut handler must removeClass('cons-open') from body on close");
+    });
+}
+
+// NOTE: Digit alignment in numeric/time columns (Device Count, AET, Hours
+// Worked, Surplus, Productivity%) is a known open issue deferred to the
+// Inter font migration session. DM Sans woff2 subset has no tnum GSUB
+// feature (verified by binary inspection — digit widths 312-698 units,
+// no tabular alternate). Planned fix: migrate to Inter which ships tnum
+// by default, then use font-variant-numeric:tabular-nums. See Roadmap.
+
+// ── Consolidated Totals: Option A — row expansion disabled ────────────────────
+// cons-view is a summary report. Clicking a row used to call
+// processConslidateDetail via a per-row click handler wired in buildConsolidated.
+// Option A (v2.1.3): expansion is disabled. The click-wiring each() block is
+// removed; processConslidateDetail is retained (dormant) for potential future use.
+// Row tooltip updated to "Daily totals across all devices for this date."
+
+console.log('\n  Consolidated Totals: Option A — row expansion disabled');
+
+{
+    const fs   = require('fs');
+    const path = require('path');
+    const jsSrc = fs.readFileSync(path.join(__dirname, '..', 'popup.js'), 'utf8');
+
+    test('popup.js: buildConsolidated does NOT wire processConslidateDetail click handler', () => {
+        // The each() block that set cursor:pointer and wired processConslidateDetail
+        // must not appear in buildConsolidated.
+        const bcIdx = jsSrc.indexOf('function buildConsolidated(');
+        assert(bcIdx !== -1, 'buildConsolidated must exist');
+        // Find the end of buildConsolidated by locating the next top-level function
+        const nextFnIdx = jsSrc.indexOf('\nfunction ', bcIdx + 1);
+        const bcBody = jsSrc.slice(bcIdx, nextFnIdx !== -1 ? nextFnIdx : undefined);
+        assert(!bcBody.includes('processConslidateDetail'),
+            'buildConsolidated must not reference processConslidateDetail (Option A: expansion disabled)');
+    });
+
+    test('popup.js: processConslidateDetail function still exists (retained dormant)', () => {
+        assert(jsSrc.includes('function processConslidateDetail('),
+            'processConslidateDetail must still be defined (retained for potential future Option B use)');
+    });
+
+    test('popup.js: processConslidateDetail JSDoc notes Option A dormant status', () => {
+        const fnIdx = jsSrc.indexOf('function processConslidateDetail(');
+        // Walk backwards to find the JSDoc block
+        const docEnd = fnIdx;
+        const docStart = jsSrc.lastIndexOf('/**', docEnd);
+        assert(docStart !== -1 && docStart < docEnd, 'processConslidateDetail must have a JSDoc block');
+        const docBlock = jsSrc.slice(docStart, docEnd);
+        assert(docBlock.includes('Option A') || docBlock.includes('dormant') || docBlock.includes('disabled'),
+            'processConslidateDetail JSDoc must note that it is dormant under Option A');
+    });
+
+    test('popup.js: buildTotalCLine row tooltip does not mention "Click on a row to view detail"', () => {
+        // Expansion is disabled in cons-view; the tooltip must not instruct the
+        // user to click for detail (there is no detail expansion in this view).
+        const btcIdx = jsSrc.indexOf('function buildTotalCLine(');
+        assert(btcIdx !== -1, 'buildTotalCLine must exist');
+        const nextFnIdx2 = jsSrc.indexOf('\nfunction ', btcIdx + 1);
+        const btcBody = jsSrc.slice(btcIdx, nextFnIdx2 !== -1 ? nextFnIdx2 : undefined);
+        assert(!btcBody.includes('Click on a row to view detail'),
+            'buildTotalCLine row tooltip must not say "Click on a row to view detail" (Option A: expansion disabled)');
+    });
+
+    test('popup.js: buildTotalCLine row tooltip mentions daily totals', () => {
+        const btcIdx = jsSrc.indexOf('function buildTotalCLine(');
+        const nextFnIdx2 = jsSrc.indexOf('\nfunction ', btcIdx + 1);
+        const btcBody = jsSrc.slice(btcIdx, nextFnIdx2 !== -1 ? nextFnIdx2 : undefined);
+        assert(btcBody.includes('Daily totals') || btcBody.includes('daily totals'),
+            'buildTotalCLine row title attribute must describe the row as daily totals (not a clickable expansion trigger)');
+    });
+}
+
+// ── Consolidated Totals: summary row 7-column alignment ───────────────────────
+// "Week ending" and "Total for the period" rows previously had 6 tds (missing
+// the hidden det-time-col at position 2), causing Device Count, AET, Hours
+// Worked, Surplus, and Productivity % to all shift left by one column.
+// "Total for the period" was also missing the Productivity % td entirely.
+// Fix: all three summary rows now have 7 tds matching the thead and the
+// buildTotalCLine daily-total rows:
+//   1. Date label
+//   2. <td class="det-time-col"></td>  (hidden, width:0 — column alignment)
+//   3. Empty Device Count cell          (summary rows span all devices)
+//   4. AET
+//   5. Hours Worked
+//   6. Surplus / Diff
+//   7. Productivity %
+
+console.log('\n  Consolidated Totals: summary row 7-column alignment');
+
+{
+    const fs   = require('fs');
+    const path = require('path');
+    const jsSrc = fs.readFileSync(path.join(__dirname, '..', 'popup.js'), 'utf8');
+
+    // Extract buildConsolidated function body for all row-level assertions.
+    const bcIdx    = jsSrc.indexOf('function buildConsolidated(');
+    const nextFnIdx = jsSrc.indexOf('\nfunction ', bcIdx + 1);
+    const bcBody   = jsSrc.slice(bcIdx, nextFnIdx !== -1 ? nextFnIdx : undefined);
+
+    // Helper: find the append(...) call string that contains a given label,
+    // searching within a provided source string.
+    function findAppendRow(src, label) {
+        const labelIdx = src.indexOf(label);
+        if (labelIdx === -1) return null;
+        const apIdx = src.lastIndexOf("table.find('tbody').append(", labelIdx);
+        if (apIdx === -1) return null;
+        const clIdx = src.indexOf(');', apIdx);
+        return src.slice(apIdx, clIdx + 2);
+    }
+
+    test('popup.js: Week ending (week1) row has det-time-col td at position 2', () => {
+        const row = findAppendRow(bcBody, "Week ending ' + date2mmddyy(week1end)");
+        assert(row !== null, 'Week ending week1 append row must exist in buildConsolidated');
+        assert(row.includes('det-time-col'),
+            'Week ending week1 row must include a det-time-col td at position 2');
+    });
+
+    test('popup.js: Week ending (week1) row has empty Device Count td at position 3', () => {
+        const row = findAppendRow(bcBody, "Week ending ' + date2mmddyy(week1end)");
+        // After the det-time-col td there must be an empty totaltd before the AET
+        assert(row.includes("det-time-col\"></td>"),
+            'det-time-col td must close before the empty Device Count td');
+        // The empty device count td comes next — confirmed by an empty totaltd
+        // followed immediately by the AET millisToHoursMinutesAndSeconds call
+        assert(row.includes('<td class="totaltd"></td>'),
+            'Week ending week1 row must have an empty Device Count td at position 3');
+    });
+
+    test('popup.js: Week ending (week2) row has det-time-col td at position 2', () => {
+        const row = findAppendRow(bcBody, "Week ending ' + date2mmddyy(period.endDate)");
+        assert(row !== null, 'Week ending week2 append row must exist in buildConsolidated');
+        assert(row.includes('det-time-col'),
+            'Week ending week2 row must include a det-time-col td at position 2');
+    });
+
+    test('popup.js: Week ending (week2) row has empty Device Count td at position 3', () => {
+        const row = findAppendRow(bcBody, "Week ending ' + date2mmddyy(period.endDate)");
+        assert(row.includes('<td class="totaltd"></td>'),
+            'Week ending week2 row must have an empty Device Count td at position 3');
+    });
+
+    test('popup.js: Week ending (week2) row computes and renders Diff in Surplus column', () => {
+        // week2 previously used a "train" placeholder (set to "") for the Surplus
+        // cell, leaving it blank. The fix computes diff/diffStr/diffClass the same
+        // way week1 does and renders "Diff is <time>" in the Surplus td.
+        const row = findAppendRow(bcBody, "Week ending ' + date2mmddyy(period.endDate)");
+        assert(row.includes('Diff is'),
+            'Week ending week2 Surplus td must render "Diff is <time>" (train placeholder removed)');
+    });
+
+    test('popup.js: Week ending (week2) block computes diff before the append call', () => {
+        const w2Idx = bcBody.indexOf("if (week2Totalw > 0)");
+        assert(w2Idx !== -1, 'week2 block must exist in buildConsolidated');
+        const w2Block = bcBody.slice(w2Idx);
+        const diffCalcIdx = w2Block.indexOf('diff = (week2Totalra * 60000) - week2Totalw');
+        const appendIdx   = w2Block.indexOf("table.find('tbody').append");
+        assert(diffCalcIdx !== -1,
+            'week2 block must compute diff = (week2Totalra * 60000) - week2Totalw');
+        assert(diffCalcIdx < appendIdx,
+            'diff must be computed before the week2 append call');
+    });
+
+    test('popup.js: Week ending (week2) block applies diffClass (greentd/redtdd) to Surplus td', () => {
+        const w2Idx = bcBody.indexOf("if (week2Totalw > 0)");
+        const w2Block = bcBody.slice(w2Idx);
+        assert(w2Block.includes("diffClass = 'greentd'") && w2Block.includes("diffClass = 'redtdd'"),
+            'week2 block must set diffClass to greentd or redtdd (same red/green logic as week1)');
+    });
+
+    test('popup.js: Week ending (week2) no longer uses train placeholder for Surplus cell', () => {
+        const w2Idx = bcBody.indexOf("if (week2Totalw > 0)");
+        const w2Block = bcBody.slice(w2Idx, bcBody.indexOf("if (week2Totalw > 0)", w2Idx + 1) || undefined);
+        // train = "" was the old placeholder — it must not be used in the Surplus td
+        assert(!w2Block.includes("'<td class=\"totaltd\">' + train"),
+            'Week ending week2 Surplus td must not use the train placeholder (it rendered as empty)');
+    });
+
+    test('popup.js: Total for the period row has det-time-col td at position 2', () => {
+        const row = findAppendRow(bcBody, 'Total for the period');
+        assert(row !== null, 'Total for the period append row must exist in buildConsolidated');
+        assert(row.includes('det-time-col'),
+            'Total for the period row must include a det-time-col td at position 2');
+    });
+
+    test('popup.js: Total for the period row has empty Device Count td at position 3', () => {
+        const row = findAppendRow(bcBody, 'Total for the period');
+        assert(row.includes('<td class="totaltd"></td>'),
+            'Total for the period row must have an empty Device Count td at position 3');
+    });
+
+    test('popup.js: Total for the period row includes Productivity % column', () => {
+        const row = findAppendRow(bcBody, 'Total for the period');
+        assert(row.includes('periodCalc') || row.includes('bluecalc'),
+            'Total for the period row must include a Productivity % td (was missing before fix)');
+    });
+
+    test('popup.js: Total for the period row closes with </tr> not bare <tr>', () => {
+        const row = findAppendRow(bcBody, 'Total for the period');
+        const lastTr      = row.lastIndexOf('<tr>');
+        const lastCloseTr = row.lastIndexOf('</tr>');
+        assert(lastCloseTr > lastTr || lastTr === -1,
+            'Total for the period row must end with </tr>, not a bare opening <tr> tag');
+    });
+
+    test('popup.js: periodCalc declared before Total for the period append call', () => {
+        const calcIdx   = bcBody.indexOf('let periodCalc =');
+        const appendIdx = bcBody.indexOf('Total for the period');
+        assert(calcIdx !== -1, 'periodCalc must be declared in buildConsolidated');
+        assert(calcIdx < appendIdx,
+            'periodCalc must be computed before the Total for the period row is appended');
+    });
+}
+
+
+
+// ── DM Sans bundled locally (no remote @import) ────────────────────────────────
+// The popup's host_permissions never included fonts.googleapis.com /
+// fonts.gstatic.com, so the remote @import silently failed and the popup
+// never actually rendered in DM Sans. Bundling removes the dependency.
+
+console.log('\n  DM Sans bundled locally (no remote @import)');
+
+{
+    const fs   = require('fs');
+    const path = require('path');
+    const popupSrc = fs.readFileSync(path.join(__dirname, '..', 'popup.css'), 'utf8');
+    const styleSrc = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
+
+    test('popup.css: no remote @import from fonts.googleapis.com', () => {
+        assert(!popupSrc.includes("@import url('https://fonts.googleapis.com"),
+            'popup.css must not @import from fonts.googleapis.com — host_permissions does not cover it');
+    });
+
+    test('style.css: no remote @import from fonts.googleapis.com', () => {
+        assert(!styleSrc.includes("@import url('https://fonts.googleapis.com"),
+            'style.css must not @import from fonts.googleapis.com — host_permissions does not cover it');
+    });
+
+    test('popup.css: declares @font-face for DM Sans weights 400, 500, 600', () => {
+        [400, 500, 600].forEach(w => {
+            const re = new RegExp(`@font-face\\s*\\{[^}]*font-family:\\s*'DM Sans'[^}]*font-weight:\\s*${w}[^}]*\\}`, 's');
+            assert(re.test(popupSrc) || (popupSrc.includes(`font-weight: ${w};`) && popupSrc.includes("font-family: 'DM Sans';")),
+                `popup.css must declare an @font-face for DM Sans weight ${w}`);
+        });
+    });
+
+    test('popup.css: @font-face src references local fonts/ path', () => {
+        assert(popupSrc.includes("url('fonts/") && popupSrc.includes('.woff2'),
+            'popup.css @font-face rules must reference local fonts/*.woff2 files, not a remote URL');
+    });
+
+    test('style.css: declares @font-face for DM Sans weights 400, 500, 600', () => {
+        [400, 500, 600].forEach(w => {
+            const re = new RegExp(`@font-face\\s*\\{[^}]*font-family:\\s*'DM Sans'[^}]*font-weight:\\s*${w}[^}]*\\}`, 's');
+            assert(re.test(styleSrc) || (styleSrc.includes(`font-weight: ${w};`) && styleSrc.includes("font-family: 'DM Sans';")),
+                `style.css must declare an @font-face for DM Sans weight ${w}`);
+        });
+    });
+
+    test('style.css: @font-face src references local fonts/ path', () => {
+        assert(styleSrc.includes("url('fonts/") && styleSrc.includes('.woff2'),
+            'style.css @font-face rules must reference local fonts/*.woff2 files, not a remote URL');
+    });
+
+    test('fonts/ directory exists with a README documenting required files', () => {
+        const readmePath = path.join(__dirname, '..', 'fonts', 'README.txt');
+        assert(fs.existsSync(readmePath), 'fonts/README.txt must exist documenting which woff2 files are required');
+    });
+}
+
+// ── CSS color class specificity fix ──────────────────────────────────────────
+// .tableClass td has specificity (0,1,1) which beats all bare colour classes
+// (.greentd, .redtdd, .totaltd, .bluecalc, .dateWork — all 0,1,0).
+// This caused color: var(--text) from .tableClass td to override every colour
+// applied to table cells, so greens, reds, purples, and blues were invisible.
+//
+// Fix: qualified selectors (.tableClass td.greentd etc, specificity 0,2,1)
+// added above the unqualified fallbacks. The unqualified rules are kept for
+// non-table uses of the same classes.
+//
+// Additional fixes in this pass:
+// - .tableClass tbody tr:hover td.totaltd added to keep purple-bg on hover
+//   (the generic tr:hover td rule would wash purple rows to --surface2).
+// - .tableClass.cons-view .blueTitle { cursor: default } added — Option A
+//   disabled row expansion in cons-view so pointer cursor was misleading.
+// - buildTotalCLine Productivity % td given class="bluecalc" for consistency
+//   with week1/week2/period rows (it was unstyled plain text before).
+
+console.log('\n  CSS color class specificity fix');
+
+{
+    const fs   = require('fs');
+    const path = require('path');
+    const cssSrc = fs.readFileSync(path.join(__dirname, '..', 'popup.css'), 'utf8');
+    const jsSrc  = fs.readFileSync(path.join(__dirname, '..', 'popup.js'),  'utf8');
+
+    test('popup.css: .tableClass td.greentd qualified rule exists with higher specificity', () => {
+        assert(cssSrc.includes('.tableClass td.greentd'),
+            '.tableClass td.greentd must exist to beat .tableClass td color override');
+    });
+
+    test('popup.css: .tableClass td.redtdd qualified rule exists', () => {
+        assert(cssSrc.includes('.tableClass td.redtdd'),
+            '.tableClass td.redtdd must exist to beat .tableClass td color override');
+    });
+
+    test('popup.css: .tableClass td.totaltd qualified rule exists', () => {
+        assert(cssSrc.includes('.tableClass td.totaltd'),
+            '.tableClass td.totaltd must exist to beat .tableClass td color override');
+    });
+
+    test('popup.css: .tableClass td.bluecalc qualified rule exists', () => {
+        assert(cssSrc.includes('.tableClass td.bluecalc'),
+            '.tableClass td.bluecalc must exist to beat .tableClass td color override');
+    });
+
+    test('popup.css: .tableClass td.dateWork qualified rule exists', () => {
+        assert(cssSrc.includes('.tableClass td.dateWork'),
+            '.tableClass td.dateWork must exist to beat .tableClass td color override');
+    });
+
+    test('popup.css: qualified color rules appear after .tableClass td base rule', () => {
+        const baseTdIdx   = cssSrc.indexOf('.tableClass td {');
+        const qualifiedIdx = cssSrc.indexOf('.tableClass td.greentd');
+        assert(baseTdIdx !== -1, '.tableClass td base rule must exist');
+        assert(qualifiedIdx > baseTdIdx,
+            'qualified .tableClass td.greentd must appear after the base .tableClass td rule');
+    });
+
+    test('popup.css: totaltd purple background preserved on hover', () => {
+        assert(cssSrc.includes('tr:hover td.totaltd'),
+            '.tableClass tbody tr:hover td.totaltd must exist to prevent hover from washing purple rows to --surface2');
+    });
+
+    test('popup.css: cons-view blueTitle has cursor:default (Option A — no row expansion)', () => {
+        assert(cssSrc.includes('.tableClass.cons-view .blueTitle'),
+            '.tableClass.cons-view .blueTitle rule must exist for cursor:default in cons-view');
+        const ruleMatch = cssSrc.match(/\.tableClass\.cons-view \.blueTitle\s*\{([^}]+)\}/);
+        assert(ruleMatch && ruleMatch[1].includes('cursor') && ruleMatch[1].includes('default'),
+            '.tableClass.cons-view .blueTitle must set cursor:default');
+    });
+
+    test('popup.css: base .blueTitle retains cursor:pointer for normal tracker view', () => {
+        const baseMatch = cssSrc.match(/(?<!cons-view\s)\.blueTitle\s*\{([^}]+)\}/);
+        assert(baseMatch && baseMatch[1].includes('pointer'),
+            'base .blueTitle must retain cursor:pointer for normal tracker row expansion');
+    });
+
+    test('popup.js: buildTotalCLine Productivity % td has bluecalc class', () => {
+        const btcIdx = jsSrc.indexOf('function buildTotalCLine(');
+        const nextFn = jsSrc.indexOf('\nfunction ', btcIdx + 1);
+        const btcBody = jsSrc.slice(btcIdx, nextFn !== -1 ? nextFn : undefined);
+        assert(btcBody.includes('class="bluecalc"') && btcBody.includes('calc.toFixed'),
+            'buildTotalCLine Productivity % td must have class="bluecalc"');
+    });
+}
+
+// ── Approach A: return false in every onMessage listener ─────────────────────
+// chrome.runtime.sendMessage broadcasts to every loaded extension context.
+// Any listener that doesn't return true (async) OR return false (synchronous
+// done) leaves Chrome with an open channel, producing:
+//   "A listener indicated an asynchronous response by returning true, but
+//    the message channel closed before a response was received."
+// Fix: every listener that doesn't handle a given message must return false
+// explicitly so Chrome closes the channel immediately for that message.
+//
+// Approach B: SendSafeRuntimeMessage fire-and-forget fix (utils.js)
+// Previously, SendSafeRuntimeMessage always passed dummyResponse as the
+// callback, which told Chrome to expect a response from every listener for
+// every message — including fire-and-forget messages like CONSOLELOG.
+// Fix: only pass the callback when the caller explicitly provides one.
+// With no callback, Chrome doesn't expect a response and doesn't fire the
+// channel-closed error even if no listener calls sendResponse.
+//
+// Roadmap — Approach C (3.0.0):
+// Replace runtime broadcast with targeted chrome.tabs.sendMessage or
+// long-lived Port connections so messages only reach the context that cares.
+// Eliminates the 16-listener broadcast problem at the source.
+
+console.log('\n  Approach A+B: onMessage return false + SendSafeRuntimeMessage fix');
+
+{
+    const fs   = require('fs');
+    const path = require('path');
+
+    // All content-script and page files that register an onMessage listener.
+    // background.js uses a named function (real_myListener) already audited separately.
+    const listenerFiles = [
+        'audio.js', 'capture.js', 'chat.js', 'feed.js', 'feedback.js',
+        'files.js', 'invoice.js', 'invoiceselect.js', 'monitor.js', 'phrases.js',
+        'popup.js', 'raterhub.js', 'social.js', 'spell.js', 'task-actions.js'
+    ];
+
+    // Helper: extract the onMessage listener body from a source string.
+    // For named-function registrations, returns an empty string (audited separately).
+    function extractListenerBody(src) {
+        const idx = src.indexOf('chrome.runtime.onMessage.addListener');
+        if (idx === -1) return null;
+        // Check for named-function registration (no inline function body)
+        const afterReg = src.slice(idx, idx + 80);
+        if (!afterReg.includes('function')) return ''; // named ref, skip
+        const start = src.indexOf('{', idx);
+        let depth = 0, pos = start, end = -1;
+        while (pos < src.length) {
+            if (src[pos] === '{') depth++;
+            else if (src[pos] === '}') { depth--; if (depth === 0) { end = pos + 1; break; } }
+            pos++;
+        }
+        return end !== -1 ? src.slice(start, end) : '';
+    }
+
+    for (const file of listenerFiles) {
+        const src = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+        const body = extractListenerBody(src);
+        if (body === null) continue; // no listener
+        if (body === '') continue;   // named function, audited separately
+
+        test(`${file}: onMessage listener has explicit return false`, () => {
+            assert(body.includes('return false'),
+                `${file} onMessage listener must have "return false" for unhandled messages ` +
+                `to prevent the "message channel closed" error`);
+        });
+    }
+
+    // Verify no listener uses bare `return;` (returns undefined, same as no return)
+    // instead of `return false;` — undefined doesn't close the channel cleanly.
+    const bareReturnFiles = ['phrases.js', 'spell.js', 'feedback.js'];
+    for (const file of bareReturnFiles) {
+        const src = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+        const body = extractListenerBody(src);
+        if (!body) continue;
+        test(`${file}: onMessage listener has no bare return; (must be return false)`, () => {
+            // A bare `return;` at the end of a branch returns undefined —
+            // Chrome treats that the same as no return value and keeps the
+            // channel open if a callback was registered on the sender side.
+            const bareReturn = body.match(/\breturn\s*;/g) || [];
+            assert(bareReturn.length === 0,
+                `${file} listener must not use bare "return;" — use "return false;" instead ` +
+                `(found ${bareReturn.length} bare return statement(s))`);
+        });
+    }
+
+    // Approach B: SendSafeRuntimeMessage must not unconditionally pass dummyResponse
+    test('utils.js: SendSafeRuntimeMessage only passes callback when caller provides one', () => {
+        const utilsSrc = fs.readFileSync(path.join(__dirname, '..', 'utils.js'), 'utf8');
+        const fnIdx = utilsSrc.indexOf('function SendSafeRuntimeMessage(');
+        // Extract just the function body by brace-matching, not by next-function search
+        // (the next-function search overshoots into JSDoc comments of the next fn)
+        const braceStart = utilsSrc.indexOf('{', fnIdx);
+        let depth = 0, pos = braceStart, braceEnd = -1;
+        while (pos < utilsSrc.length) {
+            if (utilsSrc[pos] === '{') depth++;
+            else if (utilsSrc[pos] === '}') { depth--; if (depth === 0) { braceEnd = pos + 1; break; } }
+            pos++;
+        }
+        const body = utilsSrc.slice(fnIdx, braceEnd);
+        // Strip single-line comments before checking — the word "dummyResponse"
+        // appears in the explanatory comment but must not appear in executable code.
+        const codeOnly = body.replace(/\/\/[^\n]*/g, '');
+        // Must NOT unconditionally pass dummyResponse
+        assert(!codeOnly.includes('dummyResponse'),
+            'SendSafeRuntimeMessage must not pass dummyResponse unconditionally — ' +
+            'this tells Chrome to expect a response for every fire-and-forget message');
+        // Must branch on whether retFunc is provided
+        assert(body.includes('retFunc != undefined') || body.includes('retFunc !== undefined') ||
+               body.includes('retFunc != null'),
+            'SendSafeRuntimeMessage must check whether retFunc is provided before passing a callback');
+    });
+
+    test('utils.js: SendSafeRuntimeMessage passes callback when explicitly provided', () => {
+        const utilsSrc = fs.readFileSync(path.join(__dirname, '..', 'utils.js'), 'utf8');
+        const fnIdx = utilsSrc.indexOf('function SendSafeRuntimeMessage(');
+        const braceStart = utilsSrc.indexOf('{', fnIdx);
+        let depth = 0, pos = braceStart, braceEnd = -1;
+        while (pos < utilsSrc.length) {
+            if (utilsSrc[pos] === '{') depth++;
+            else if (utilsSrc[pos] === '}') { depth--; if (depth === 0) { braceEnd = pos + 1; break; } }
+            pos++;
+        }
+        const body = utilsSrc.slice(fnIdx, braceEnd);
+        // When retFunc is provided, must pass it
+        assert(body.includes('sendMessage(obj, retFunc)'),
+            'SendSafeRuntimeMessage must pass retFunc to sendMessage when caller provides it');
+    });
+
+    test('utils.js: SendSafeRuntimeMessage uses no-callback sendMessage for fire-and-forget', () => {
+        const utilsSrc = fs.readFileSync(path.join(__dirname, '..', 'utils.js'), 'utf8');
+        const fnIdx = utilsSrc.indexOf('function SendSafeRuntimeMessage(');
+        const braceStart = utilsSrc.indexOf('{', fnIdx);
+        let depth = 0, pos = braceStart, braceEnd = -1;
+        while (pos < utilsSrc.length) {
+            if (utilsSrc[pos] === '{') depth++;
+            else if (utilsSrc[pos] === '}') { depth--; if (depth === 0) { braceEnd = pos + 1; break; } }
+            pos++;
+        }
+        const body = utilsSrc.slice(fnIdx, braceEnd);
+        // Must have a sendMessage(obj) call with no callback argument
+        assert(body.includes('sendMessage(obj)') || body.includes('sendMessage(obj);'),
+            'SendSafeRuntimeMessage must call sendMessage(obj) with no callback for fire-and-forget');
+    });
+
+    // background.js real_myListener audit (named function, not inline)
+    test('background.js: real_myListener has return false fallthrough', () => {
+        const bgSrc = fs.readFileSync(path.join(__dirname, '..', 'background.js'), 'utf8');
+        const fnIdx = bgSrc.indexOf('function real_myListener(');
+        const nextFn = bgSrc.indexOf('\nfunction ', fnIdx + 1);
+        const body = bgSrc.slice(fnIdx, nextFn !== -1 ? nextFn : undefined);
+        assert(body.includes('return false'),
+            'background.js real_myListener must have return false for unhandled messages');
+    });
+}
+
+// ── offscreen.js: setupOffscreen await fix ────────────────────────────────────
+// Two bugs caused the "message channel closed" error to recur after the
+// audio.js return-false fix:
+//
+// 1. chrome.offscreen.createDocument was called with a callback (MV3 doesn't
+//    support callbacks — only Promises). The callback was silently dropped,
+//    so SendSafeTabMessage fired before the offscreen document existed.
+//    audio.js had no listener running yet, FORRHTEMP received no response,
+//    and Chrome fired the channel-closed error.
+//
+// 2. reasons: ['CLIPBOARD'] — wrong reason for an audio playback document.
+//    Should be ['AUDIO_PLAYBACK'].
+//
+// Fix: setupOffscreen now awaits createDocument before calling
+// SendSafeTabMessage, ensuring the audio.html listener is ready.
+// SendSafeTabMessage is called once after the if/else (not duplicated in
+// each branch). background_sendOffscreen now awaits setupOffscreen so
+// errors propagate rather than being silently swallowed.
+
+console.log('\n  offscreen.js: setupOffscreen await fix');
+
+{
+    const fs   = require('fs');
+    const path = require('path');
+    const src = fs.readFileSync(path.join(__dirname, '..', 'offscreen.js'), 'utf8');
+
+    test('offscreen.js: setupOffscreen uses await createDocument (not callback style)', () => {
+        // The callback style (createDocument({...}, function() {...})) silently
+        // drops the callback in MV3 and sends FORRHTEMP before the document exists.
+        assert(src.includes('await chrome.offscreen.createDocument('),
+            'setupOffscreen must await createDocument (MV3 Promise API, not callback)');
+    });
+
+    test('offscreen.js: setupOffscreen does NOT pass a callback to createDocument', () => {
+        // Extract the createDocument call and verify no trailing callback argument
+        const cdIdx = src.indexOf('chrome.offscreen.createDocument(');
+        assert(cdIdx !== -1, 'createDocument call must exist');
+        // Find the closing paren of the createDocument call
+        // The object argument closes with }); — there must be no function() after }
+        const callSlice = src.slice(cdIdx, src.indexOf(');', cdIdx) + 2);
+        assert(!callSlice.includes('function ()') && !callSlice.includes('function()'),
+            'createDocument must not use a callback — MV3 only supports the Promise API');
+    });
+
+    test('offscreen.js: setupOffscreen uses CLIPBOARD reason (not AUDIO_PLAYBACK)', () => {
+        // AUDIO_PLAYBACK causes Chrome to auto-close the offscreen document
+        // 30 seconds after audio stops — forcing a new createDocument on the
+        // next alert sound. CLIPBOARD has no lifetime limit, keeping the
+        // document alive for repeated use. Google's own canonical offscreen
+        // example uses CLIPBOARD for the same reason.
+        const setupIdx = src.indexOf('async function setupOffscreen(');
+        const nextFn   = src.indexOf('\nasync function ', setupIdx + 1);
+        const body     = src.slice(setupIdx, nextFn !== -1 ? nextFn : undefined);
+        assert(body.includes("'CLIPBOARD'") || body.includes('"CLIPBOARD"'),
+            "setupOffscreen createDocument reason must be 'CLIPBOARD' to avoid the 30s AUDIO_PLAYBACK auto-teardown");
+        assert(!body.includes("'AUDIO_PLAYBACK'"),
+            "setupOffscreen must NOT use 'AUDIO_PLAYBACK' — Chrome closes the document 30s after audio stops");
+    });
+
+    test('offscreen.js: SendSafeTabMessage called after await (not inside callback)', () => {
+        const setupIdx = src.indexOf('async function setupOffscreen(');
+        const nextFn   = src.indexOf('\nasync function ', setupIdx + 1);
+        const body     = src.slice(setupIdx, nextFn !== -1 ? nextFn : undefined);
+        const awaitIdx   = body.indexOf('await chrome.offscreen.createDocument(');
+        const sendIdx    = body.indexOf('SendSafeTabMessage(');
+        assert(awaitIdx !== -1 && sendIdx !== -1,
+            'setupOffscreen must have both await createDocument and SendSafeTabMessage');
+        assert(sendIdx > awaitIdx,
+            'SendSafeTabMessage must appear after await createDocument');
+    });
+
+    test('offscreen.js: background_sendOffscreen awaits setupOffscreen', () => {
+        const bsoIdx = src.indexOf('async function background_sendOffscreen(');
+        const nextFn = src.indexOf('\n//async', bsoIdx + 1);
+        const body   = src.slice(bsoIdx, nextFn !== -1 ? nextFn : undefined);
+        assert(body.includes('await setupOffscreen('),
+            'background_sendOffscreen must await setupOffscreen so errors are not silently swallowed');
+    });
+}
+
+// ── audio.js: onMessage listener channel-closed fix ───────────────────────────
+// chrome.runtime.onMessage broadcasts to all extension contexts including the
+// offscreen audio.html page itself. When audio.js sends CONSOLELOG messages
+// from inside the FORRHTEMP handler those messages loop back into its own
+// listener. Without an explicit return false for non-FORRHTEMP messages Chrome
+// sees a registered callback (dummyResponse) and fires:
+//   "A listener indicated an asynchronous response by returning true, but the
+//    message channel closed before a response was received."
+// Fix: return false explicitly for any message that is not FORRHTEMP so Chrome
+// immediately closes the channel for those messages. Also removed the
+// CONSOLELOG sendMessage calls from inside the handler — they were the source
+// of the loopback and are pure debug noise with no in-browser effect.
+
+console.log('\n  audio.js: onMessage listener channel-closed fix');
+
+{
+    const fs   = require('fs');
+    const path = require('path');
+    const audioSrc = fs.readFileSync(path.join(__dirname, '..', 'audio.js'), 'utf8');
+
+    test('audio.js: onMessage listener returns true only inside FORRHTEMP branch', () => {
+        // Locate the listener block by finding onMessage.addListener and
+        // extracting everything from there to the end of the file, then
+        // check that "return true" appears after "FORRHTEMP" and that
+        // there is no bare "return true" after "return false" (which would
+        // indicate a second return true outside the FORRHTEMP branch).
+        const listenerStart = audioSrc.indexOf('onMessage.addListener');
+        assert(listenerStart !== -1, 'onMessage.addListener must exist in audio.js');
+        const listenerBlock = audioSrc.slice(listenerStart);
+        const forrhIdx  = listenerBlock.indexOf('FORRHTEMP');
+        const returnTrueIdx = listenerBlock.indexOf('return true');
+        const returnFalseIdx = listenerBlock.indexOf('return false');
+        assert(forrhIdx !== -1, 'FORRHTEMP must appear in the listener block');
+        assert(returnTrueIdx !== -1, '"return true" must exist in audio.js listener');
+        assert(returnTrueIdx > forrhIdx,
+            '"return true" must appear after the FORRHTEMP check (inside that branch)');
+        // return false must come after return true (it's the fallthrough for non-FORRHTEMP)
+        assert(returnFalseIdx > returnTrueIdx,
+            '"return false" must appear after "return true" (as the non-FORRHTEMP fallthrough)');
+    });
+
+    test('audio.js: onMessage listener returns false for non-FORRHTEMP messages', () => {
+        // Must have an explicit "return false" outside/after the FORRHTEMP
+        // if-block to tell Chrome the channel can be closed immediately for
+        // any message that is not FORRHTEMP.
+        assert(audioSrc.includes('return false'),
+            'audio.js onMessage listener must have "return false" for non-FORRHTEMP messages');
+    });
+
+    test('audio.js: CONSOLELOG sendMessage calls removed from inside onMessage handler', () => {
+        // The CONSOLELOG messages sent from inside the FORRHTEMP handler were
+        // looping back into the same listener and triggering the channel-closed
+        // error. They must not appear inside the onMessage listener body.
+        const listenerMatch2 = audioSrc.match(/onMessage\.addListener\([\s\S]*?\}\s*\)\s*;/);
+        assert(listenerMatch2, 'onMessage.addListener must exist');
+        assert(!listenerMatch2[0].includes('CONSOLELOG'),
+            'CONSOLELOG sendMessage calls must be removed from inside the onMessage listener ' +
+            '(they loop back into the listener and trigger the channel-closed error)');
+    });
+
+    test('audio.js: FORRHTEMP handler still calls sendResponse in then() and catch()', () => {
+        assert(audioSrc.includes('sendResponse({ ok: true })'),
+            'FORRHTEMP handler must call sendResponse({ ok: true }) in .then()');
+        assert(audioSrc.includes('sendResponse({ ok: false'),
+            'FORRHTEMP handler must call sendResponse({ ok: false ... }) in .catch()');
+    });
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Results
 // ─────────────────────────────────────────────────────────────────────────────

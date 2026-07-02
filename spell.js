@@ -280,7 +280,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         }
         else
             internalactoptset();
-        return;
+        return false;
     }
 
     if (request.text == 'SPELLARRAY') {

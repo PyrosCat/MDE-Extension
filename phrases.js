@@ -48,7 +48,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         document.removeEventListener("keyup", keyPhraseDwn);
         document.addEventListener("keyup", keyPhraseDwn);
     }
-    return;
+    return false;
 });
 
 

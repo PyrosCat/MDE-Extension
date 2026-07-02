@@ -796,12 +796,12 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
 
     if (msg.text == "NEWCHATSOUND") {
         s_chatnoise = msg.beep;
-        return;
+        return false;
     }
 
     if (msg.text == "ALERTFROMBACKGROUND") {
         handleAlert(msg.msg);
-        return;
+        return false;
     }
 
     if (msg.text && (msg.text == "CHATM")) {
@@ -817,7 +817,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
                     chatcontrolListen();
                 }
             }
-            return;
+            return false;
         }
         addColorPickerbutton();
 
@@ -897,6 +897,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     //    //    div.addEventListener("DOMNodeInserted", chatTextAlertHandler, false);
     //}
 
+    return false;
 });
 
 /**

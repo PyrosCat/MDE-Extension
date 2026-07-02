@@ -29,16 +29,16 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     /*  am I already monitoring? */
     if (msg.text == "PLAYTHIS") {
         beep(request.data);
-        return;
+        return false;
     }
     if (msg.text == "ALERTFROMBACKGROUND") {
         handleAlert(msg.msg);
-        return;
+        return false;
     }
    if (msg.text && (msg.text == "FEEDBACKL")) {
         f = $('#mobile-device').children();
         if (f.length == 0)
-            return;
+            return false;
         fe = f.children();
         x = fe[4];
         if (msg.status == true) {
@@ -64,8 +64,9 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             $(".bu-sim-html").off("click", xrefClick);
             $('#message4desktoplink').remove();
         }
-        return;
+        return false;
     }
+    return false;
 });
 
 /**

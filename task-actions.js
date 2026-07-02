@@ -762,6 +762,7 @@ if (document.URL.indexOf("taskIds=") > -1 && isErrorTaskPage() == false) {
                 sendResponse("Opt Off");
         }
         return true;
+        return false;
     });
 
     //end mineline code

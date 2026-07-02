@@ -44,5 +44,6 @@ window.addEventListener('load', function (evt) {
                     }
             //    });
             }
+            return false;
         });
 });

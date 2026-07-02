@@ -52,7 +52,7 @@ let wS = "";
 
 /** Single source of truth for the displayed version string.
  *  Update this whenever the extension version changes. */
-const MDE_VERSION = '2.1.2 (06/23/2026)';
+const MDE_VERSION = '2.1.3 (06/29/2026)';
 
 let defaultHelp = 'MDE v.' + MDE_VERSION + '. If you find this extension helpful, please consider supporting development efforts \u2014 click the Facebook link (top right) for ways to help.';
 let help = {
@@ -1923,7 +1923,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         if (msg.msgObj == null) {
             $("#txtmsgerrors").text("Unable to find record for this email address. Has it been registered via email with MDE support? Send an email to mdipros48@gmail.com for help.");
             $("#txtmsgerrors").show();
-            return;
+            return false;
         }
         msgObj = msg.msgObj;
         $("#rhalertcontrol").hide();
@@ -2064,6 +2064,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         document.getElementById('rhaclose').scrollIntoView();
 
     }
+    return false;
 });
 
 /**
@@ -3544,6 +3545,8 @@ function buildConsolidated(dataA, periodArray) {
     // Hidden <th> at position 2 aligns with the hidden det-time-col <td>
     // present in every processTotalLine / buildTotalCLine row (7 cells each).
     table.find('thead').append('<tr><th>Date</th><th class="det-time-col"></th><th>Device Count</th><th  title="For released tasks, AET is set to work time">AET(*)</th><th>Hours Worked</th><th>Surplus</th><th title="(AET/Time worked)*100)" id="detdesc">Productivity %</th></tr>');
+    $('#trackerTable').addClass('cons-view');
+    $('body').addClass('cons-open');
 
     //add handler for close button and position it on the right
     $("#closeTotalsBut").click(function (ev) {
@@ -3551,6 +3554,8 @@ function buildConsolidated(dataA, periodArray) {
         $("#normalTableHeader").show();
         $("#consolidatedTableHeader").hide();
         $("#totals").show();
+        $('#trackerTable').removeClass('cons-view');
+        $('body').removeClass('cons-open');
         $("#ViewTracker").trigger("click");  //refresh table
         $("#when").unbind('change');
         $("#wheni").unbind('change');
@@ -3640,21 +3645,6 @@ function buildConsolidated(dataA, periodArray) {
             }
         }
     }
-    //go thru trs and if there is more than one record, change color to purple and add click handler for that row
-    //let trs = $(".tableClass").find("tbody tr");
-    let trs = $(table).find("tbody tr");
-    $(trs).each(function (tr) {
-        // is there more than one - 
-        let count = parseInt(this.children[1].textContent);
-        // if (count > 1) { do it for all
-        //this.children[0].style.color = "purple";
-        this.children[0].style.cursor = "pointer";
-        $(this.children[0]).on('click', function (el) {
-            processConslidateDetail(el);
-        });
-        // }
-    });
-
     //totals the totals for invoice
     // Declared at outer scope so week1, week2, and period-total rows all share them
     let calc = 0;
@@ -3677,20 +3667,31 @@ function buildConsolidated(dataA, periodArray) {
             }
         }
 
-        table.find('tbody').append('<tr><td class="totaltd">Week ending ' + date2mmddyy(week1end) + '</td><td class="totaltd"></td>' +
+        table.find('tbody').append('<tr><td class="totaltd">Week ending ' + date2mmddyy(week1end) + '</td><td class="det-time-col"></td>' +
+            '<td class="totaltd"></td>' +
             '<td class="totaltd">' + millisToHoursMinutesAndSeconds(week1Totalra * 60000) + '</td>' +
             '<td class="totaltd">' + millisToHoursMinutesAndSeconds(week1Totalw) + '</td>' +
             '<td class="' + diffClass + '">Diff is ' + diffStr + '</td><td class="bluecalc">' + calc.toFixed(2) + ' % </td></tr>');
     }
 
     if (week2Totalw > 0) {
-        if (week2Totalra > 0)
+        if (week2Totalra > 0) {
             calc = ((week2Totalra * 60000) / week2Totalw) * 100;
-        train = ""
-        table.find('tbody').append('<tr><td class="totaltd">Week ending ' + date2mmddyy(period.endDate) + '</td><td class="totaltd"></td>' +
+            diff = (week2Totalra * 60000) - week2Totalw;
+            diffStr = millisToHoursMinutesAndSeconds(diff);
+            diffClass = 'greentd';
+            if (diff < 0) {
+                if (diffStr != "0:0:00") {
+                    diffClass = 'redtdd';
+                    diffStr = "-" + diffStr;
+                }
+            }
+        }
+        table.find('tbody').append('<tr><td class="totaltd">Week ending ' + date2mmddyy(period.endDate) + '</td><td class="det-time-col"></td>' +
+            '<td class="totaltd"></td>' +
             '<td class="totaltd">' + millisToHoursMinutesAndSeconds(week2Totalra * 60000) + '</td>' +
             '<td class="totaltd">' + millisToHoursMinutesAndSeconds(week2Totalw) + '</td>' +
-            '<td class="totaltd">' + train + '</td><td class="bluecalc">' + calc.toFixed(2) + ' % </td></tr>');
+            '<td class="' + diffClass + '">Diff is ' + diffStr + '</td><td class="bluecalc">' + calc.toFixed(2) + ' % </td></tr>');
     }
 
     let periodDateStr = date2mmddyy(period.endDate);
@@ -3708,12 +3709,15 @@ function buildConsolidated(dataA, periodArray) {
         }
     }
 
-    table.find('tbody').append('<tr><td class="totaltd">Total for the period</td><td class="totaltd"></td>' +
+    let periodCalc = (rwork > 0 && rtotaet > 0) ? ((rtotaet * 60000) / rwork) * 100 : 0;
+
+    table.find('tbody').append('<tr><td class="totaltd">Total for the period</td><td class="det-time-col"></td>' +
+        '<td class="totaltd"></td>' +
         '<td class="totaltd">' + millisToHoursMinutesAndSeconds(rtotaet * 60000) + '</td>' +
         '<td class="totaltd">' + millisToHoursMinutesAndSeconds(rwork) + '<input id="worktot" name="worktot" type="hidden" value="' + rwork.toString() + '">' +
         '<input id="endDate" name="endDate" type="hidden" value="' + periodDateStr + '">' +
-        '</td> <td class="' + diffClass + '">' +
-        "Diff is " + diffStr + '</td><tr>');
+        '</td><td class="' + diffClass + '">' +
+        'Diff is ' + diffStr + '</td><td class="bluecalc">' + periodCalc.toFixed(2) + ' %</td></tr>');
     // make sure we added at least one det rec - if not remove table and show status message here
     if (overallT > 0)
         $(".tablearea").append(table);
@@ -3735,6 +3739,13 @@ function buildConsolidated(dataA, periodArray) {
 
 /**
  * Expand detail rows within the consolidated tracker view.
+ *
+ * NOTE (Option A — v2.1.3): Row expansion is intentionally disabled in
+ * cons-view. The click handler that called this function has been removed
+ * from buildConsolidated. This function is retained in case row expansion
+ * is re-enabled in a future release (Option B: cons-specific sub-table).
+ * The existing 4-column detRec structure it produces would need to be
+ * aligned to the 7-column cons-view thead before re-activating.
  *
  * @param {Object} el
  */
@@ -3901,14 +3912,14 @@ function buildTotalCLine(totalAET, totalTime, totalTaskCount, d, current) {
     //date taskcount aet work surplus blank
     //if week is not this week, make it another color
 
-    let trs = '<tr title="Click on a row to view detail. Click again to collapse detail." class="blueTitle">' +
+    let trs = '<tr title="Daily totals across all devices for this date." class="blueTitle">' +
         '<td class="' + workClass + '" id="sdate" >' + indateStr + "Total for " + d + '(' + dayofwktoStr(d) + ')</td>' +
         '<td class="det-time-col"></td>' +
         '<td class="greentd">' + totalTaskCount + '</td>' +
         '<td class="greentd">' + inaetStr + aetStr + '</td>' +
         '<td class="greentd">' + inworkStr + millisToHoursMinutesAndSeconds(totalTime) + '</td>' +
         '<td class="' + diffClass + '">' + indiffStr + "Diff is " + diffStr + '</td>' +
-        '<td>' + calc.toFixed(2) + ' % </td>' +
+        '<td class="bluecalc">' + calc.toFixed(2) + ' % </td>' +
         '</tr>';
     return trs;
 }

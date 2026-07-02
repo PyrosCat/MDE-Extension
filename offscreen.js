@@ -48,29 +48,24 @@ async function setupOffscreen(sound) {
     }
 
     if (!exist) {
-        let creatingx = chrome.offscreen.createDocument({
+        // MV3: createDocument returns a Promise — must await it before
+        // sending FORRHTEMP so the audio.html listener is ready to receive.
+        // Using a callback instead of await silently drops the callback and
+        // sends the message before the document exists, causing the
+        // "message channel closed" error.
+        await chrome.offscreen.createDocument({
             url: 'audio.html',
-            //reasons: ['AUDIO_PLAYBACK'],
             reasons: ['CLIPBOARD'],
             justification: 'inactive tabs dont always play sound, so they send me a request to play the sound.'
-        }, function () {
-            console.log('going to send play sound ', sound);
-            SendSafeTabMessage(null, { text: "FORRHTEMP", src: sound });
-
         });
-        console.log('created offscreen doc ' + sound);
     }
-    else {
-        console.log(' offscreen doc already existed ' + sound);
-        SendSafeTabMessage(null, { text: "FORRHTEMP", src: sound });
-    }
+
+    // Send after document is confirmed to exist (whether just created or
+    // already running) so audio.js listener is ready to receive.
+    SendSafeTabMessage(null, { text: "FORRHTEMP", src: sound });
 }
 
 async function background_sendOffscreen(sound) {
-    setupOffscreen(sound);
+    await setupOffscreen(sound);
 }
-
-//async function background_sendOffscreen(sound) {
-//    await setupOffscreen(sound);
-//}
 

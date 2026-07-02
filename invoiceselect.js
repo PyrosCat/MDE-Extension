@@ -19,7 +19,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
     if (request.text == "ALERTFROMBACKGROUND") {
         handleAlert(request.msg);
-        return;
+        return false;
     }
 
     let href = "NONE";

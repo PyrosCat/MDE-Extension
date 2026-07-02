@@ -64,6 +64,7 @@
                 rhcontrolListen("install");
             }
         }
+        return false;
     });
 }
 let s_doctitle = document.title;

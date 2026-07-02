@@ -117,7 +117,7 @@ let invoiceRec = { date: "", workMils: 0 };
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.text == "ALERTFROMBACKGROUND") {
         handleAlert(request.msg);
-        return;
+        return false;
     }
     if (request.text == 'INVOICER') {
         //console.log("got invoice msg");
@@ -276,6 +276,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         sendResponse({ answer: "done", curRow: i });
         return true;
     }
+    return false;
 });
 
 /**

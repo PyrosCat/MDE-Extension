@@ -1152,10 +1152,16 @@ function dummyResponse(response) {
  * @param {Function} retFunc
  */
 function SendSafeRuntimeMessage(obj, retFunc) {
-    let l_retFunc = (retFunc == undefined || retFunc == null) ? dummyResponse : retFunc;
-    //mde_logwrite("Runtime Sending:" + JSON.stringify(obj));
+    // Only pass a response callback when the caller explicitly provides one.
+    // Passing dummyResponse unconditionally told Chrome to expect a response
+    // from every listener for every message, causing "message channel closed"
+    // errors for fire-and-forget messages that no listener responds to.
     try {
-        chrome.runtime.sendMessage(obj, l_retFunc);
+        if (retFunc != undefined && retFunc != null) {
+            chrome.runtime.sendMessage(obj, retFunc);
+        } else {
+            chrome.runtime.sendMessage(obj);
+        }
     }
     catch (err) {
         if (chrome.runtime.lastError != undefined) {

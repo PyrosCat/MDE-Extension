@@ -8,6 +8,267 @@ Versioning:  MAJOR.MINOR.PATCH
 
 
 
+2.1.3  —  2026-07-01
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Patch — Fix Consolidated Totals column sizing, summary row 7-column
+alignment, Week ending (week2) missing Diff, CSS color class specificity
+(colors invisible in table), and row expansion disabled (Option A); fix
+offscreen.js createDocument callback/await race; fix audio.js onMessage
+channel-closed error; fix all 16 onMessage listeners with explicit return
+false (Approach A) and fire-and-forget SendSafeRuntimeMessage (Approach B);
+bundle DM Sans locally instead of loading from fonts.googleapis.com.
+549 tests pass (77 new).
+
+  FIX — Approach A: explicit return false in all 16 onMessage listeners
+
+  chrome.runtime.sendMessage broadcasts to every loaded extension context.
+  Any listener that neither returns true (async response pending) nor
+  returns false (synchronous done) leaves Chrome holding an open channel.
+  When a callback was registered by the sender, Chrome fires:
+    "A listener indicated an asynchronous response by returning true, but
+     the message channel closed before a response was received."
+  13 listeners were missing explicit return false for unhandled messages.
+  3 listeners used bare return; (returns undefined — same problem).
+  All 16 listeners (across 15 files) now have explicit return false as the
+  final fallthrough statement. Background.js real_myListener was already
+  correct and is confirmed by test.
+  Files changed: capture.js, chat.js, feed.js, feedback.js, files.js,
+  invoice.js, invoiceselect.js, monitor.js, phrases.js, popup.js,
+  raterhub.js, social.js, spell.js, task-actions.js.
+  (chat.js, invoice.js, invoiceselect.js, and popup.js had additional
+  bare return; statements inside handled branches found during final review
+  — all converted to return false.)
+  16 new tests.
+
+  FIX — Approach B: SendSafeRuntimeMessage fire-and-forget mode
+
+  SendSafeRuntimeMessage (utils.js) previously substituted dummyResponse
+  when no callback was provided, passing it to chrome.runtime.sendMessage
+  unconditionally. This told Chrome to expect a response for every message
+  — including fire-and-forget messages like CONSOLELOG, ALERTFROMBACKGROUND,
+  and status updates — which no listener ever responds to.
+  Fix: only pass a callback to sendMessage when the caller explicitly
+  provides one. With no callback, Chrome doesn't track the channel and
+  the "message channel closed" error cannot occur for that call.
+  3 new tests.
+
+  ROADMAP — Approach C: targeted messaging (planned for 3.0.0)
+
+  Approaches A and B eliminate the error but the underlying architecture —
+  16 listeners receiving every broadcast message — remains. Approach C
+  (deferred to 3.0.0 with the ES module refactor) replaces broadcast
+  runtime messages with targeted chrome.tabs.sendMessage(specificTabId)
+  or long-lived chrome.runtime.Port connections, so messages only reach
+  the context that cares. This eliminates the broadcast problem entirely.
+
+  FIX — offscreen.js: createDocument callback/await race + wrong reason
+
+  Two bugs in setupOffscreen caused the "message channel closed" error to
+  recur even after the audio.js return-false fix:
+
+  1. chrome.offscreen.createDocument was called with a callback (MV3 only
+     supports the Promise API — callbacks are silently dropped). The
+     callback was never invoked, so SendSafeTabMessage fired immediately,
+     before the offscreen document existed. audio.js had no listener yet,
+     FORRHTEMP received no response, and Chrome fired the error.
+
+  2. reasons: ['CLIPBOARD'] — this is intentional. AUDIO_PLAYBACK causes
+     Chrome to auto-close the offscreen document 30 seconds after audio
+     stops, forcing a new createDocument call for every subsequent alert.
+     CLIPBOARD has no lifetime limit, keeping the document alive for
+     repeated use. Google's own canonical offscreen example uses CLIPBOARD
+     for exactly this reason. The reason was incorrectly changed to
+     AUDIO_PLAYBACK in a prior fix and has been reverted to CLIPBOARD.
+
+  Fix:
+  - setupOffscreen now awaits createDocument before calling
+    SendSafeTabMessage, guaranteeing the audio.html listener is running
+    before FORRHTEMP is sent.
+  - SendSafeTabMessage is called once after the if/else block (not
+    duplicated in each branch as before).
+  - reasons: ['CLIPBOARD'] is intentionally retained — AUDIO_PLAYBACK
+    causes Chrome to auto-close the document 30 seconds after audio stops.
+  - background_sendOffscreen now awaits setupOffscreen so errors propagate
+    rather than being silently swallowed.
+  5 new tests.
+
+  FIX — audio.js: onMessage listener "message channel closed" error
+
+  Chrome error: "A listener indicated an asynchronous response by returning
+  true, but the message channel closed before a response was received."
+  Context: audio.html  Stack: audio.html:0
+
+  Root cause: chrome.runtime.onMessage broadcasts to all extension contexts
+  including the offscreen audio.html page itself. The FORRHTEMP handler in
+  audio.js sent CONSOLELOG messages via chrome.runtime.sendMessage from
+  inside the handler. Those messages looped back into audio.js's own
+  listener, hit the if (msg.text == "FORRHTEMP") check, fell through
+  without a response, and Chrome fired the channel-closed error for each
+  one. Additionally, any other runtime-broadcast message (not FORRHTEMP)
+  would cause the listener to return undefined — telling Chrome the channel
+  was synchronously closed, which also triggers the error for callers that
+  passed a response callback.
+
+  Fix:
+  - Added explicit "return false" at the bottom of the onMessage listener
+    for all non-FORRHTEMP messages. This tells Chrome the listener will
+    not call sendResponse and the channel can be closed immediately.
+  - Removed the CONSOLELOG sendMessage calls from inside the FORRHTEMP
+    handler. They were the source of the loopback and are pure debug noise
+    with no observable in-browser effect (background.js handles CONSOLELOG
+    with return false and does nothing with the message).
+  - The FORRHTEMP branch continues to return true and call sendResponse
+    inside .then()/.catch() — this is unchanged and correct.
+  9 new tests.
+
+  FIX — Consolidated Totals (#consolidated button): row expansion
+  disabled (Option A)
+
+  The consolidated view is a summary report showing daily totals aggregated
+  across all devices. A pre-existing click handler (processConslidateDetail)
+  wired to each row's date cell attempted to expand rows with per-device
+  detail, but produced 4-column detRec rows inside a 7-column table —
+  a structural mismatch. Additionally, det-expanded / det-expanded-wide
+  state conflicts with cons-open column widths (col 2 width:0).
+
+  Fix (Option A — disable expansion in cons-view):
+  - Removed the $(trs).each(...) block from buildConsolidated that set
+    cursor:pointer and wired processConslidateDetail to each row's date cell.
+  - Updated the <tr title> in buildTotalCLine from "Click on a row to view
+    detail. Click again to collapse detail." to "Daily totals across all
+    devices for this date." — accurate for a non-interactive summary row.
+  - processConslidateDetail is retained in place (dormant) with an updated
+    JSDoc noting Option A status, in case row expansion is re-enabled in
+    a future release (Option B: cons-specific sub-table aligned to 7 cols).
+  5 new tests.
+
+  FIX — Consolidated Totals: summary row 7-column alignment
+
+  The "Week ending" and "Total for the period" rows were missing the
+  hidden det-time-col <td> at position 2, causing Device Count, AET,
+  Hours Worked, Surplus, and Productivity % to shift left by one column
+  for those rows while the daily-total rows (buildTotalCLine) were
+  correctly aligned. "Total for the period" was also missing the
+  Productivity % <td> (7th column) entirely, and had a stale bare <tr>
+  closing tag instead of </tr>.
+
+  All three summary rows now have 7 tds matching the thead and
+  buildTotalCLine:
+    1. Date label
+    2. <td class="det-time-col"></td>  (hidden, width:0)
+    3. Empty Device Count <td>         (summary spans all devices)
+    4. AET
+    5. Hours Worked
+    6. Surplus / Diff
+    7. Productivity %  (computed as periodCalc for the period row)
+  9 new tests.
+
+  FIX — Consolidated Totals: Week ending (week2) Surplus/Diff cell blank
+
+  The "Week ending <week2 date>" row showed AET and Hours Worked but left
+  the Surplus/Diff column empty. Root cause: the week2 block only updated
+  calc (productivity %) and set train = "" for the Surplus td — it never
+  computed diff/diffStr/diffClass. The week1 block computed all three
+  correctly; week2 was never given the same treatment.
+
+  Fix: week2 block now mirrors week1 — computes diff, diffStr, and
+  diffClass (greentd/redtdd) before the append call, then renders
+  "Diff is <time>" in the Surplus td with the correct colour class.
+  The train placeholder variable is no longer used for this row.
+  4 new tests.
+
+  FIX — CSS color class specificity: table cell colors invisible
+
+  All colour classes applied to <td> elements (.greentd, .redtdd, .totaltd,
+  .bluecalc, .dateWork) were being silently overridden by the base rule:
+    .tableClass td { color: var(--text); }
+  Specificity of .tableClass td is (0,1,1); bare colour classes are (0,1,0).
+  The base rule won on every cell, so green, red, purple, and blue colours
+  were never displayed — cells rendered in the default text colour.
+
+  Fix: added qualified rules (.tableClass td.greentd etc.) with specificity
+  (0,2,1) above the unqualified fallbacks. Unqualified rules retained for
+  non-table uses of the same classes.
+
+  Also fixed in this pass:
+  - .tableClass tbody tr:hover td.totaltd added to preserve purple-bg on
+    hover (the generic tr:hover td rule washed purple rows to --surface2).
+  - .tableClass.cons-view .blueTitle { cursor: default } — pointer cursor
+    was stale after Option A disabled row expansion in cons-view.
+  - buildTotalCLine Productivity % td given class="bluecalc" for consistency
+    with week1/week2/period rows (was unstyled plain text before).
+  10 new tests.
+
+  FIX — DM Sans bundled locally instead of remote @import
+
+  popup.css and style.css both loaded DM Sans via:
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans...');
+
+  manifest.json host_permissions has never included fonts.googleapis.com or
+  fonts.gstatic.com (the second-hop domain the Google Fonts CSS response
+  itself points to for the actual .woff2 files). Extension pages and
+  content scripts fetching cross-origin resources are governed by the same
+  host-permission model as scripts — without it listed, this remote font
+  request was very likely failing silently the entire time. Every popup
+  and content-script element styled with 'DM Sans', system-ui, sans-serif
+  was actually rendering in the system fallback font, not DM Sans.
+
+  Fix: removed both @import rules and added local @font-face declarations
+  (weights 400/500/600) in both files, referencing fonts/*.woff2 by
+  relative path. popup.css resolves these against the extension package
+  automatically (same-origin, no manifest change needed). style.css is
+  declared in manifest.json's content_scripts.css array, so Chrome also
+  resolves its relative url() paths against the extension package when
+  injecting into host pages — no web_accessible_resources entry needed
+  for either file.
+
+  NOTE: The actual DM Sans .woff2 binary files are not yet present in
+  fonts/ — see fonts/README.txt for exact filenames and download sources
+  (Google Webfonts Helper recommended). Binary font files cannot be
+  fetched through this session's available tools; they must be added
+  manually before this fix takes full effect in-browser.
+
+  NOTE — Digit alignment in numeric/time columns (deferred)
+
+  DM Sans does not produce consistent digit widths — this woff2 subset has
+  no tnum GSUB feature (verified by decompressing the font binary and
+  inspecting the GSUB FeatureList with fontTools: only calt/ccmp/dnom/frac/
+  liga/locl/numr present; digit advance widths range from 312 to 698 units
+  with no tabular alternate). font-variant-numeric: tabular-nums has nothing
+  to invoke and is a no-op for this font. A monospace font stack was trialled
+  but reverted — the visual size mismatch between monospace and DM Sans was
+  unacceptable. Proper fix deferred to the Inter migration (see Roadmap):
+  Inter ships tnum by default, at which point tabular-nums will work.
+
+  FIX — Consolidated Totals (#consolidated button) column widths
+
+  Columns were not sized for their actual content: Date ("Total for
+  6/18/2026(Thurs)"), Device Count ("1"), AET(*) ("01:16:00"), Hours Worked
+  ("01:09:04"), Surplus ("Diff is 00:06:56"), Productivity % ("110.03 %").
+  This view is independent from the Invoice button (#totals) view, which
+  has different content and was already sized separately via invoice-view.
+
+  Fix — CSS:
+  - .tableClass.cons-view now sets explicit widths for columns 1, 3, 4, 5,
+    6, and 7 (col 2 stays at width:0, hidden det-time-col). Widths tuned
+    against real rendering: col 1 (Date) 175px/145px, col 3 (Device Count)
+    95px/72px, col 4 (AET) 66px/56px, col 5 (Hours Worked) 100px/70px,
+    col 6 (Surplus) 105px/84px for "Diff is 00:06:56", col 7
+    (Productivity %) auto/90px.
+  - body.cons-open min-width raised from 640px to 700px — the new column
+    widths sum to 631px minimum plus 32px of #trackertablediv margins,
+    leaving no room at 640px; 700px tested and confirmed in-browser.
+  - invoice-view and cons-view column rules are fully independent — sizing
+    one does not affect the other.
+
+  Fix — JS in buildConsolidated:
+  - Adds cons-view to #trackerTable and cons-open to <body> after the
+    thead is built so column and popup-width rules take effect immediately.
+  - closeTotalsBut handler removes both classes before triggering
+    ViewTracker to rebuild the normal table.
+
+
+
 2.1.2  —  2026-06-23
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Patch — Fix audio.js message channel closed error; fix worktime edit controls
@@ -576,6 +837,24 @@ Roadmap
   2.2.0   Re-enable text message / email alert forwarding feature
   2.x.x   Browser-environment test suite (Playwright or Chrome extension
           harness) for DOM-dependent functions currently untestable in Node
+  2.x.x   Base font migration: DM Sans → Inter (planned, pending next session)
+          Goals: improved legibility, consistency, modernization, accessibility.
+          Plan:
+          · Verify Inter's bundled woff2 subset actually ships tnum GSUB
+            feature (same binary-inspection method used to discover DM Sans
+            lacks it — decompress and check GSUB FeatureList directly with
+            fontTools, do not trust marketing claims).
+          · If tnum confirmed: drop the JetBrains Mono monospace override on
+            .tableClass td:nth-child(n+3) and revert to font-variant-numeric:
+            tabular-nums — Inter's native tabular figures will handle alignment
+            without a separate font family.
+          · Bundle Inter locally in fonts/ (same pattern as DM Sans — @font-face
+            in popup.css and style.css, no remote @import). Weights 400/500/600.
+          · Swap font-family: 'DM Sans' → 'Inter' across popup.css and style.css.
+          · Full visual regression pass across every popup screen — this changes
+            the base font everywhere, not just the tracker table.
+          · Decide whether to retire DM Sans entirely or retain it for a specific
+            accent use (e.g. branding/title only) once Inter is rendered.
   3.0.0   Refactor all content scripts from global-scope to ES modules
           (import / export); prerequisite for tree-shaking and stricter
           isolation between injected scripts
